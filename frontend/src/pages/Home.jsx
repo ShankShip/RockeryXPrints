@@ -6,6 +6,7 @@ import CollectionsShowcase from '../components/landing/CollectionsShowcase';
 import FeaturedProducts from '../components/landing/FeaturedProducts';
 import BentoAbout from '../components/landing/BentoAbout';
 import Footer from '../components/landing/Footer';
+import ServerWarmupBanner from '../components/ServerWarmupBanner';
 import { getProducts } from '../services/api';
 import { mockProducts } from '../data/mockData';
 
@@ -56,6 +57,7 @@ export default function Home() {
 
   return (
     <div id="home" className="min-h-screen bg-white text-black font-space selection:bg-black selection:text-white overflow-x-hidden antialiased">
+      <ServerWarmupBanner />
       <Navbar />
       <main className="pt-20">
         <CollectionsShowcase />

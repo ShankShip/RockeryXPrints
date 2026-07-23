@@ -20,7 +20,6 @@ import CollectionsPage from './pages/CollectionsPage.jsx'
 import ShopPage from './pages/ShopPage.jsx'
 import CategoryDetailPage from './pages/CategoryDetailPage.jsx'
 import AuthLayout from './components/AuthLayout.jsx'
-import ServerWarmupBanner from './components/ServerWarmupBanner.jsx'
 
 const router = createBrowserRouter([
   {
@@ -92,12 +91,7 @@ function AppWrapper({ children }) {
     });
   }, [dispatch]);
 
-  return (
-    <>
-      <ServerWarmupBanner />
-      {children}
-    </>
-  );
+  return children;
 }
 
 createRoot(document.getElementById('root')).render(

@@ -107,6 +107,7 @@ export default function ProductDetailPage() {
   const [editImageFiles, setEditImageFiles] = useState([]);
   const [editImageList, setEditImageList] = useState([]);
   const [editHoverVideoFile, setEditHoverVideoFile] = useState(null);
+  const [editRemoveHoverVideo, setEditRemoveHoverVideo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
 
@@ -361,7 +362,9 @@ export default function ProductDetailPage() {
       formData.append('images', newFileItems[i].file);
     }
 
-    if (editHoverVideoFile) {
+    if (editRemoveHoverVideo) {
+      formData.append('removeHoverVideo', 'true');
+    } else if (editHoverVideoFile) {
       formData.append('hoverVideo', editHoverVideoFile);
     }
 
@@ -739,16 +742,41 @@ export default function ProductDetailPage() {
 
                   {/* Update Hover Video (Optional) */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-500">UPDATE HOVER VIDEO (OPTIONAL - .MP4 / .WEBM)</label>
-                    <div className="relative border-2 border-dashed border-black bg-white p-3 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
-                      <input
-                        type="file" accept="video/mp4,video/webm,video/*" onChange={(e) => setEditHoverVideoFile(e.target.files[0])}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <span className="text-[10px] font-bold uppercase text-black truncate block">
-                        {editHoverVideoFile ? editHoverVideoFile.name : 'CLICK TO UPLOAD NEW HOVER VIDEO'}
-                      </span>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-500">UPDATE HOVER VIDEO (OPTIONAL - .MP4 / .WEBM)</label>
+                      {product?.hoverVideo && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditRemoveHoverVideo(!editRemoveHoverVideo);
+                            setEditHoverVideoFile(null);
+                          }}
+                          className={`text-[8px] font-extrabold uppercase px-2 py-0.5 border border-black cursor-pointer transition-colors ${
+                            editRemoveHoverVideo
+                              ? 'bg-black text-white'
+                              : 'bg-red-600 text-white hover:bg-black'
+                          }`}
+                        >
+                          {editRemoveHoverVideo ? '↩ UNDO REMOVAL' : '✕ REMOVE HOVER VIDEO'}
+                        </button>
+                      )}
                     </div>
+
+                    {editRemoveHoverVideo ? (
+                      <div className="border-2 border-red-600 bg-red-50 p-2.5 text-center text-[9px] font-bold uppercase text-red-600">
+                        HOVER VIDEO MARKED FOR DELETION (WILL BE REMOVED ON SAVE)
+                      </div>
+                    ) : (
+                      <div className="relative border-2 border-dashed border-black bg-white p-3 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
+                        <input
+                          type="file" accept="video/mp4,video/webm,video/*" onChange={(e) => setEditHoverVideoFile(e.target.files[0])}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <span className="text-[10px] font-bold uppercase text-black truncate block">
+                          {editHoverVideoFile ? editHoverVideoFile.name : product?.hoverVideo ? 'CLICK TO REPLACE EXISTING HOVER VIDEO' : 'CLICK TO UPLOAD NEW HOVER VIDEO'}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <button

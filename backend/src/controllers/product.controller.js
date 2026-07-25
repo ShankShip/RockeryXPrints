@@ -322,7 +322,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     const newHoverVideoPath = req.files?.hoverVideo?.[0]?.path;
     if (newHoverVideoPath) {
         if (product.hoverVideo) {
-            await deleteOnCloudinary(product.hoverVideo);
+            await deleteOnCloudinary(product.hoverVideo, 'video');
         }
         const uploadedHoverVideo = await uploadOnCloudinary(newHoverVideoPath);
         if (uploadedHoverVideo && uploadedHoverVideo.url) {
@@ -330,7 +330,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         }
     } else if (req.body.removeHoverVideo === 'true' || req.body.removeHoverVideo === true) {
         if (product.hoverVideo) {
-            await deleteOnCloudinary(product.hoverVideo);
+            await deleteOnCloudinary(product.hoverVideo, 'video');
         }
         updatedHoverVideo = "";
     }
@@ -689,7 +689,7 @@ const updateCollection = asyncHandler(async (req, res) => {
     const hoverVideoPath = req.files?.hoverVideo?.[0]?.path;
     if (hoverVideoPath) {
         if (existingCollection.hoverVideo) {
-            await deleteOnCloudinary(existingCollection.hoverVideo);
+            await deleteOnCloudinary(existingCollection.hoverVideo, 'video');
         }
         const newHoverVideo = await uploadOnCloudinary(hoverVideoPath);
         if (newHoverVideo) {
@@ -697,7 +697,7 @@ const updateCollection = asyncHandler(async (req, res) => {
         }
     } else if (req.body.removeHoverVideo === 'true' || req.body.removeHoverVideo === true) {
         if (existingCollection.hoverVideo) {
-            await deleteOnCloudinary(existingCollection.hoverVideo);
+            await deleteOnCloudinary(existingCollection.hoverVideo, 'video');
         }
         existingCollection.hoverVideo = "";
     }

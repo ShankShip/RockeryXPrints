@@ -26,7 +26,7 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-const deleteOnCloudinary = async (imgUrl) => {
+const deleteOnCloudinary = async (imgUrl, resourceType = 'auto') => {
     cloudinary.config({ 
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
@@ -40,11 +40,15 @@ const deleteOnCloudinary = async (imgUrl) => {
         const img = urlArray[urlArray.length - 1]
         const publicId = img.split('.')[0]
 
-        const response = await cloudinary.uploader.destroy(publicId, {resource_type: "image"})
+        // Detect if the file is a video by URL extension or resourceType parameter
+        const isVideo = imgUrl.match(/\.(mp4|webm|mov|avi|mkv)$/i) || resourceType === 'video';
+        const type = isVideo ? 'video' : 'image';
+
+        const response = await cloudinary.uploader.destroy(publicId, { resource_type: type })
 
         return response
     } catch (error) {
-        console.log("Error at Cloudinary: ", error)
+        console.log("Error at Cloudinary delete: ", error)
         return null
     }
 }

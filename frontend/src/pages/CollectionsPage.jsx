@@ -106,6 +106,7 @@ export default function CollectionsPage() {
   const [editDescription, setEditDescription] = useState('');
   const [editCoverImageFile, setEditCoverImageFile] = useState(null);
   const [editHoverVideoFile, setEditHoverVideoFile] = useState(null);
+  const [editRemoveHoverVideo, setEditRemoveHoverVideo] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editErrorMsg, setEditErrorMsg] = useState('');
 
@@ -116,6 +117,7 @@ export default function CollectionsPage() {
     setEditDescription(col.description || '');
     setEditCoverImageFile(null);
     setEditHoverVideoFile(null);
+    setEditRemoveHoverVideo(false);
     setEditErrorMsg('');
   };
 
@@ -141,7 +143,9 @@ export default function CollectionsPage() {
     if (editCoverImageFile) {
       formData.append('coverImage', editCoverImageFile);
     }
-    if (editHoverVideoFile) {
+    if (editRemoveHoverVideo) {
+      formData.append('removeHoverVideo', 'true');
+    } else if (editHoverVideoFile) {
       formData.append('hoverVideo', editHoverVideoFile);
     }
 
@@ -155,6 +159,7 @@ export default function CollectionsPage() {
         });
         setEditingCollection(null);
         setEditHoverVideoFile(null);
+        setEditRemoveHoverVideo(false);
         fetchCollectionsList();
       })
       .catch((err) => {
@@ -600,21 +605,46 @@ export default function CollectionsPage() {
               </div>
 
               <div className="mb-6">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block mb-1.5">
-                  UPDATE HOVER VIDEO (OPTIONAL)
-                </label>
-                <div className="relative border-2 border-dashed border-black bg-white p-4 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
-                  <input
-                    type="file"
-                    accept="video/mp4,video/webm,video/*"
-                    onChange={(e) => setEditHoverVideoFile(e.target.files[0])}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <Film size={18} className="mx-auto mb-1 opacity-50" />
-                  <span className="font-space text-xs font-bold uppercase block truncate">
-                    {editHoverVideoFile ? editHoverVideoFile.name : 'CLICK TO REPLACE HOVER VIDEO (.MP4, .WEBM)'}
-                  </span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+                    UPDATE HOVER VIDEO (OPTIONAL)
+                  </label>
+                  {editingCollection?.hoverVideo && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditRemoveHoverVideo(!editRemoveHoverVideo);
+                        setEditHoverVideoFile(null);
+                      }}
+                      className={`text-[9px] font-extrabold uppercase px-2 py-0.5 border border-black cursor-pointer transition-colors ${
+                        editRemoveHoverVideo
+                          ? 'bg-black text-white'
+                          : 'bg-red-600 text-white hover:bg-black'
+                      }`}
+                    >
+                      {editRemoveHoverVideo ? '↩ UNDO REMOVAL' : '✕ REMOVE HOVER VIDEO'}
+                    </button>
+                  )}
                 </div>
+
+                {editRemoveHoverVideo ? (
+                  <div className="border-2 border-red-600 bg-red-50 p-3 text-center text-[10px] font-bold uppercase text-red-600">
+                    HOVER VIDEO MARKED FOR DELETION (WILL BE REMOVED ON SAVE)
+                  </div>
+                ) : (
+                  <div className="relative border-2 border-dashed border-black bg-white p-4 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/*"
+                      onChange={(e) => setEditHoverVideoFile(e.target.files[0])}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Film size={18} className="mx-auto mb-1 opacity-50" />
+                    <span className="font-space text-xs font-bold uppercase block truncate">
+                      {editHoverVideoFile ? editHoverVideoFile.name : editingCollection?.hoverVideo ? 'CLICK TO REPLACE EXISTING HOVER VIDEO' : 'CLICK TO UPLOAD HOVER VIDEO (.MP4, .WEBM)'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-4">

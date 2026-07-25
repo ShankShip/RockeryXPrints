@@ -163,6 +163,7 @@ const addProduct = asyncHandler(async (req, res) => {
     }
 
     const imagesPath = req.files?.images?.map(item => item?.path) || []
+    const hoverVideoPath = req.files?.hoverVideo?.[0]?.path
 
     if (!imagesPath.length) {
         throw new ApiError(400, "Images are required to upload")
@@ -178,6 +179,14 @@ const addProduct = asyncHandler(async (req, res) => {
         return result.url
     })
 
+    let hoverVideoUrl = "";
+    if (hoverVideoPath) {
+        const hoverVideoResult = await uploadOnCloudinary(hoverVideoPath)
+        if (hoverVideoResult && hoverVideoResult.url) {
+            hoverVideoUrl = hoverVideoResult.url;
+        }
+    }
+
     const product = await Product.create({
         name,
         slug,
@@ -191,6 +200,7 @@ const addProduct = asyncHandler(async (req, res) => {
         stock: Number(stock) || 0,
         deliveryDays: Number(deliveryDays),
         images: imageUrls,
+        hoverVideo: hoverVideoUrl,
         features: parsedFeatures
     })
 
@@ -246,6 +256,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
 
     let updatedImages = product.images; 
+    let updatedHoverVideo = product.hoverVideo;
 
     const newImagesPath = req.files?.images?.map(item => item?.path) || [];
     
@@ -258,6 +269,17 @@ const updateProduct = asyncHandler(async (req, res) => {
         const uploadResults = await Promise.all(uploadPromises);
         
         updatedImages = uploadResults.map(result => result.url);
+    }
+
+    const newHoverVideoPath = req.files?.hoverVideo?.[0]?.path;
+    if (newHoverVideoPath) {
+        if (product.hoverVideo) {
+            await deleteOnCloudinary(product.hoverVideo);
+        }
+        const uploadedHoverVideo = await uploadOnCloudinary(newHoverVideoPath);
+        if (uploadedHoverVideo && uploadedHoverVideo.url) {
+            updatedHoverVideo = uploadedHoverVideo.url;
+        }
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -276,6 +298,7 @@ const updateProduct = asyncHandler(async (req, res) => {
                 stock: Number(stock),
                 deliveryDays: Number(deliveryDays),
                 images: updatedImages,
+                hoverVideo: updatedHoverVideo,
                 features: parsedFeatures
             }
         },
@@ -301,6 +324,9 @@ const deleteProduct = asyncHandler(async (req, res) => {
     for (const oldImageUrl of product.images) {
         await deleteOnCloudinary(oldImageUrl);
     }
+    if (product.hoverVideo) {
+        await deleteOnCloudinary(product.hoverVideo);
+    }
 
     if (!product.parentProduct) {
         await Category.findByIdAndUpdate(product.category, {
@@ -312,6 +338,9 @@ const deleteProduct = asyncHandler(async (req, res) => {
         for (const variant of variants) {
             for (const img of variant.images) {
                 await deleteOnCloudinary(img);
+            }
+            if (variant.hoverVideo) {
+                await deleteOnCloudinary(variant.hoverVideo);
             }
         }
 
@@ -427,7 +456,7 @@ const getProductBySlug = asyncHandler(async (req, res) => {
     }
 
     const variants = await Product.find({ parentProduct: product._id })
-        .select("name sku sellingPrice mrp stock images");
+        .select("name sku sellingPrice mrp stock images hoverVideo");
 
     let isPurchased = product.isPurchased || false;
     let userReview = null;
@@ -479,6 +508,7 @@ const addCollection = asyncHandler(async (req, res) => {
     }
 
     const coverImagePath = req.files?.coverImage?.[0]?.path
+    const hoverVideoPath = req.files?.hoverVideo?.[0]?.path
 
     if (!coverImagePath) {
         throw new ApiError(400, "Upload cover photo for collection")
@@ -490,11 +520,20 @@ const addCollection = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Internal error occurred while uploading cover photo")
     }
 
+    let hoverVideoUrl = "";
+    if (hoverVideoPath) {
+        const uploadedVideo = await uploadOnCloudinary(hoverVideoPath);
+        if (uploadedVideo && uploadedVideo.url) {
+            hoverVideoUrl = uploadedVideo.url;
+        }
+    }
+
     const collection = await Collection.create({
         name,
         slug,
         searchTag: tag,
         coverImage: coverImage.url,
+        hoverVideo: hoverVideoUrl,
         description: description || ''
     })
 
@@ -539,6 +578,9 @@ const deleteCollection = asyncHandler(async (req, res) => {
 
     if (existingCollection.coverImage) {
         await deleteOnCloudinary(existingCollection.coverImage);
+    }
+    if (existingCollection.hoverVideo) {
+        await deleteOnCloudinary(existingCollection.hoverVideo);
     }
 
     await existingCollection.deleteOne()
@@ -589,6 +631,17 @@ const updateCollection = asyncHandler(async (req, res) => {
             throw new ApiError(500, "Error uploading new cover photo");
         }
         existingCollection.coverImage = newCoverImage.url;
+    }
+
+    const hoverVideoPath = req.files?.hoverVideo?.[0]?.path;
+    if (hoverVideoPath) {
+        if (existingCollection.hoverVideo) {
+            await deleteOnCloudinary(existingCollection.hoverVideo);
+        }
+        const newHoverVideo = await uploadOnCloudinary(hoverVideoPath);
+        if (newHoverVideo) {
+            existingCollection.hoverVideo = newHoverVideo.url;
+        }
     }
 
     await existingCollection.save();

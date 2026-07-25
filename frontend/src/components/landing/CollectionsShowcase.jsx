@@ -6,6 +6,65 @@ import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { getCollections } from '../../services/api';
 import { mockCollections, getProductSvg } from '../../data/mockData';
 
+function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
+  const videoRef = useRef(null);
+  const [isCardHovered, setIsCardHovered] = useState(false);
+
+  const videoSrc = hoverVideo || '';
+
+  const handleMouseEnter = () => {
+    setIsCardHovered(true);
+    if (videoSrc && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsCardHovered(false);
+    if (videoSrc && videoRef.current) {
+      videoRef.current.pause();
+    }
+  };
+
+  return (
+    <div
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-black"
+    >
+      {videoSrc ? (
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 pointer-events-none z-0"
+        />
+      ) : null}
+
+      {coverImage ? (
+        <img
+          src={coverImage}
+          alt={alt || 'Collection Cover'}
+          className={`w-full h-full object-cover transition-all duration-500 group-hover/card:scale-105 hover:scale-105 relative z-10 ${
+            isCardHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          }`}
+        />
+      ) : (
+        <div
+          className={`w-full h-full flex items-center justify-center p-4 bg-stripes-dark transition-all duration-500 group-hover/card:scale-105 hover:scale-105 relative z-10 ${
+            isCardHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          {fallbackSvg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CollectionsShowcase() {
   const navigate = useNavigate();
   const [collections, setCollections] = useState(mockCollections);
@@ -135,19 +194,14 @@ export default function CollectionsShowcase() {
                   onClick={() => navigate(`/shop?tag=${encodeURIComponent(tagParam)}`)}
                   className="group/card w-72 sm:w-80 border-2 border-neutral-800 hover:border-white bg-neutral-950 flex flex-col justify-between p-4 cursor-pointer transition-colors duration-150 shrink-0 relative overflow-hidden shadow-solid-sm"
                 >
-                  {/* Image Matte */}
+                  {/* Image Matte with HoverMedia */}
                   <div className="w-full h-44 border border-neutral-800 bg-neutral-900 relative overflow-hidden mb-3 flex items-center justify-center">
-                    {col.coverImage ? (
-                      <img
-                        src={col.coverImage}
-                        alt={col.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center p-4 bg-stripes-dark">
-                        {getProductSvg(col.slug || 'anime', idx)}
-                      </div>
-                    )}
+                    <HoverMedia
+                      coverImage={col.coverImage}
+                      hoverVideo={col.hoverVideo}
+                      alt={col.name}
+                      fallbackSvg={getProductSvg(col.slug || 'anime', idx)}
+                    />
                   </div>
 
                   {/* Info */}

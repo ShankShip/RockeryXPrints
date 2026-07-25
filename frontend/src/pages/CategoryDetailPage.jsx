@@ -1,11 +1,11 @@
 // src/pages/CategoryDetailPage.jsx
 // Displays products under a specific Category from the backend
 // Allows admins to delete category if empty, and add a product with category predefined
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector, useDispatch } from 'react-redux';
-import { Heart, Plus, Trash2, ArrowLeft, Upload, X } from 'lucide-react';
+import { Heart, Plus, Trash2, ArrowLeft, Upload, X, Film } from 'lucide-react';
 import { addToCart } from '../store/cartSlice';
 import { getProductSvg, mockProducts, mockCategories } from '../data/mockData';
 import { getCategories, getProducts, addProductAPI, deleteCategoryAPI } from '../services/api';
@@ -15,11 +15,68 @@ import Popup from '../components/landing/Popup';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.35 };
 
+function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
+  const videoRef = useRef(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const videoSrc = hoverVideo || '';
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (videoSrc && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => { });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (videoSrc && videoRef.current) {
+      videoRef.current.pause();
+    }
+  };
+
+  return (
+    <div
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-black"
+    >
+      {videoSrc ? (
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none z-0"
+        />
+      ) : null}
+
+      {coverImage ? (
+        <img
+          src={coverImage}
+          alt={alt || 'Product Image'}
+          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+            }`}
+        />
+      ) : (
+        <div
+          className={`w-full h-full flex items-center justify-center p-4 bg-stripes transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+            }`}
+        >
+          {fallbackSvg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CategoryDetailPage() {
   const { categorySlug } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+
   const { user } = useSelector((s) => s.auth);
   const isAdmin = user?.role === 'admin';
 
@@ -40,7 +97,7 @@ export default function CategoryDetailPage() {
   const [searchTagsInput, setSearchTagsInput] = useState('');
   const [featureRows, setFeatureRows] = useState([{ key: 'PAPER', value: '300 GSM ARCHIVAL MATTE' }]);
   const [imageFiles, setImageFiles] = useState([]);
-  
+
   const [wishlist, setWishlist] = useState([]);
   const [added, setAdded] = useState({});
   const [errorMsg, setErrorMsg] = useState('');
@@ -76,9 +133,9 @@ export default function CategoryDetailPage() {
       // Get category object by fetching all categories and finding by slug
       const catRes = await getCategories(isAdmin);
       const allCats = catRes.data?.data || [];
-      const foundCat = allCats.find((c) => c.slug === categorySlug) || 
-                       mockCategories.find((c) => c.slug === categorySlug);
-      
+      const foundCat = allCats.find((c) => c.slug === categorySlug) ||
+        mockCategories.find((c) => c.slug === categorySlug);
+
       if (!foundCat) {
         setErrorMsg('CATEGORY NOT REGISTERED.');
         setLoading(false);
@@ -93,8 +150,8 @@ export default function CategoryDetailPage() {
       // Pad with mock products of same category if list is empty for visual richness
       if (catProds.length === 0) {
         const fallbacks = mockProducts.filter(
-          (p) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') === foundCat.slug || 
-                 p.category?.slug === foundCat.slug
+          (p) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') === foundCat.slug ||
+            p.category?.slug === foundCat.slug
         );
         setProducts(fallbacks);
       } else {
@@ -106,8 +163,8 @@ export default function CategoryDetailPage() {
       if (foundCat) {
         setCategory(foundCat);
         const fallbacks = mockProducts.filter(
-          (p) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') === foundCat.slug || 
-                 p.category?.slug === foundCat.slug
+          (p) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') === foundCat.slug ||
+            p.category?.slug === foundCat.slug
         );
         setProducts(fallbacks);
       }
@@ -133,6 +190,8 @@ export default function CategoryDetailPage() {
     setTimeout(() => setAdded((prev) => ({ ...prev, [product._id]: false })), 1500);
   };
 
+  const [hoverVideoFile, setHoverVideoFile] = useState(null);
+
   // Validate and open confirmation popup
   const handleSubmitProductAttempt = (e) => {
     e.preventDefault();
@@ -157,10 +216,10 @@ export default function CategoryDetailPage() {
     formData.append('mrp', mrp);
     formData.append('sellingPrice', sellingPrice);
     formData.append('category', category._id); // Predefined & unchangeable
-    formData.append('sku', sku || `RXP-${category.name.slice(0,3).toUpperCase()}-${Math.floor(Math.random()*900+100)}`);
+    formData.append('sku', sku || `RXP-${category.name.slice(0, 3).toUpperCase()}-${Math.floor(Math.random() * 900 + 100)}`);
     formData.append('stock', stock);
     formData.append('deliveryDays', deliveryDays);
-    
+
     // Parse tags array
     const tagsArr = searchTagsInput.split(',').map(t => t.trim().toLowerCase()).filter(t => t);
     tagsArr.forEach(tag => formData.append('searchTags[]', tag));
@@ -169,9 +228,13 @@ export default function CategoryDetailPage() {
     const featuresArr = featureRows.filter(r => r.key && r.value);
     formData.append('features', JSON.stringify(featuresArr));
 
-    // Append multiple files
+    // Append multiple image files
     for (let i = 0; i < imageFiles.length; i++) {
       formData.append('images', imageFiles[i]);
+    }
+
+    if (hoverVideoFile) {
+      formData.append('hoverVideo', hoverVideoFile);
     }
 
     try {
@@ -187,8 +250,9 @@ export default function CategoryDetailPage() {
       setSearchTagsInput('');
       setFeatureRows([{ key: 'PAPER', value: '300 GSM ARCHIVAL MATTE' }]);
       setImageFiles([]);
+      setHoverVideoFile(null);
       setFormOpen(false);
-      
+
       // Refresh details
       fetchCategoryDetails();
     } catch (err) {
@@ -377,24 +441,46 @@ export default function CategoryDetailPage() {
                   </div>
                 </div>
 
-                {/* Multiple Images Upload */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-black">UPLOAD PRODUCT IMAGES (MULTIPLE)</label>
-                  <div className="relative border-2 border-dashed border-black bg-white p-5 flex flex-col items-center justify-center text-center">
-                    <input
-                      type="file" multiple accept="image/*" onChange={handleFileChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <Upload size={20} className="text-neutral-400 mb-1" />
-                    {imageFiles.length > 0 ? (
-                      <span className="text-xs font-bold text-black uppercase">
-                        {imageFiles.length} FILES SELECTED
-                      </span>
-                    ) : (
-                      <span className="text-xs text-neutral-400 uppercase">
-                        DRAG FILES OR CLICK TO UPLOAD
-                      </span>
-                    )}
+                {/* Multiple Images Upload & Required Hover Video */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-black">UPLOAD PRODUCT IMAGES * (MULTIPLE)</label>
+                    <div className="relative border-2 border-dashed border-black bg-white p-5 flex flex-col items-center justify-center text-center">
+                      <input
+                        type="file" multiple accept="image/*" required onChange={handleFileChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <Upload size={20} className="text-neutral-400 mb-1" />
+                      {imageFiles.length > 0 ? (
+                        <span className="text-xs font-bold text-black uppercase">
+                          {imageFiles.length} FILES SELECTED
+                        </span>
+                      ) : (
+                        <span className="text-xs text-neutral-400 uppercase">
+                          DRAG IMAGES OR CLICK TO UPLOAD
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-black">HOVER VIDEO (OPTIONAL - .MP4 / .WEBM)</label>
+                    <div className="relative border-2 border-dashed border-black bg-white p-5 flex flex-col items-center justify-center text-center">
+                      <input
+                        type="file" accept="video/mp4,video/webm,video/*" onChange={(e) => setHoverVideoFile(e.target.files[0])}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <Film size={20} className="text-neutral-400 mb-1" />
+                      {hoverVideoFile ? (
+                        <span className="text-xs font-bold text-black uppercase truncate">
+                          {hoverVideoFile.name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-neutral-400 uppercase truncate">
+                          UPLOAD HOVER VIDEO (.MP4, .WEBM)
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -443,7 +529,7 @@ export default function CategoryDetailPage() {
 
         {/* ── Error message ── */}
         {errorMsg && !loading && (
-          <div className="max-w-7xl mx-auto px-5 py-12 text-center bg-white">
+          <div className="px-5 py-12 text-center bg-white border-b-4 border-black">
             <p className="font-inter font-black text-4xl uppercase tracking-tighter text-neutral-300 mb-6">{errorMsg}</p>
             <Link to="/categories" className="font-space font-bold text-xs uppercase border-2 border-black px-6 py-3 hover:bg-black hover:text-white transition-colors">
               RETURN TO CATEGORIES
@@ -451,12 +537,13 @@ export default function CategoryDetailPage() {
           </div>
         )}
 
-        {/* ── Product Grid ── */}
-        {!loading && !errorMsg && (
+        {/* ── Products Grid ── */}
+        {!loading && !errorMsg && category && (
           <>
-            {products.length === 0 ? (
-              <div className="border-b-4 border-black px-5 py-24 text-center bg-white">
-                <p className="font-inter font-black text-3xl md:text-4xl uppercase tracking-tighter text-neutral-200 mb-4">
+
+            {isCategoryEmpty ? (
+              <div className="p-12 md:p-20 text-center bg-white">
+                <p className="font-inter font-black text-3xl md:text-5xl uppercase tracking-tighter text-neutral-300 mb-4">
                   THIS CATEGORY IS EMPTY
                 </p>
                 {isAdmin && (
@@ -469,8 +556,8 @@ export default function CategoryDetailPage() {
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 bg-black gap-0.5 p-0.5">
                 {products.map((product, idx) => {
                   const isWishlisted = wishlist.includes(product._id);
-                  const isAdded      = added[product._id];
-                  const isSoldOut    = product.stock === 0;
+                  const isAdded = added[product._id];
+                  const isSoldOut = product.stock === 0;
 
                   return (
                     <motion.div
@@ -480,26 +567,20 @@ export default function CategoryDetailPage() {
                       viewport={{ once: true, margin: '-40px' }}
                       transition={{ ...spring, delay: (idx % 4) * 0.05 }}
                       whileHover={{ x: -4, y: -4, boxShadow: '6px 6px 0px 0px #000000' }}
-                      className="bg-black border-2 border-black h-full flex flex-col"
+                      className="bg-black border-2 border-black h-full flex flex-col group"
                     >
                       <div className="h-full flex flex-col bg-white">
-                        {/* Image canvas */}
+                        {/* Image canvas with HoverMedia */}
                         <Link to={`/products/${product.slug}`} className="block relative">
                           <div className="w-full bg-stripes border-b-2 border-black relative flex items-center justify-center overflow-hidden"
-                               style={{ aspectRatio: '3/4' }}>
-                            
-                            {/* Cloudinary Image or Fallback SVG */}
-                            {product.images && product.images[0] ? (
-                              <img
-                                src={product.images[0]}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20">
-                                {getProductSvg(product.slug, idx)}
-                              </div>
-                            )}
+                            style={{ aspectRatio: '3/4' }}>
+
+                            <HoverMedia
+                              coverImage={product.images && product.images[0]}
+                              hoverVideo={product.hoverVideo}
+                              alt={product.name}
+                              fallbackSvg={getProductSvg(product.slug, idx)}
+                            />
 
                             {isSoldOut && (
                               <div className="absolute top-0 left-0 font-space font-bold text-[8px] sm:text-[9px] md:text-[10px] px-2 py-1 uppercase tracking-wider border-r-2 border-b-2 border-black">
@@ -540,21 +621,20 @@ export default function CategoryDetailPage() {
                             <button
                               onClick={(e) => !isSoldOut && handleAdd(product, e)}
                               disabled={isSoldOut}
-                              className={`flex items-center gap-1 font-space font-bold uppercase text-[8px] sm:text-[9px] md:text-xs px-2 sm:px-3 py-2 border-2 border-black transition-colors duration-100 touch-manipulation ${
-                                isSoldOut
+                              className={`flex items-center gap-1 font-space font-bold uppercase text-[8px] sm:text-[9px] md:text-xs px-2 sm:px-3 py-2 border-2 border-black transition-colors duration-100 touch-manipulation ${isSoldOut
                                   ? 'opacity-40 cursor-not-allowed bg-neutral-100'
                                   : isAdded
                                     ? 'bg-black text-white'
                                     : 'bg-black text-white hover:bg-white hover:text-black'
-                              }`}
+                                }`}
                             >
                               <Plus size={10} />
                               {isSoldOut ? 'OUT' : isAdded ? '✓' : 'ADD'}
                             </button>
                           </div>
                         </div>
-                        </div>
-                      </motion.div>
+                      </div>
+                    </motion.div>
                   );
                 })}
               </div>

@@ -36,6 +36,68 @@ function SkeletonCard() {
   );
 }
 
+function ProductHoverMedia({ coverImage, hoverVideo, alt, fallbackSvg, isMobile }) {
+  const videoRef = useRef(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const videoSrc = hoverVideo || '';
+
+  const handleMouseEnter = () => {
+    if (isMobile) return;
+    setIsHovered(true);
+    if (videoSrc && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => { });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isMobile) return;
+    setIsHovered(false);
+    if (videoSrc && videoRef.current) {
+      videoRef.current.pause();
+    }
+  };
+
+  return (
+    <div
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-black"
+    >
+      {!isMobile && videoSrc ? (
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+        />
+      ) : null}
+
+      {coverImage ? (
+        <img
+          src={coverImage}
+          alt={alt || 'Product Image'}
+          className={`w-full h-full object-cover transition-all duration-500 relative z-10 ${
+            !isMobile && isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          }`}
+          loading="lazy"
+        />
+      ) : (
+        <div
+          className={`w-full h-full flex items-center justify-center relative z-10 ${
+            !isMobile && isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          {fallbackSvg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Mouse-tracked tilt product card ──────────────────────────────────────────
 function ProductCard({ product, index, onAdd, isAdded, isMobile }) {
   const cardRef = useRef(null);
@@ -93,18 +155,15 @@ function ProductCard({ product, index, onAdd, isAdded, isMobile }) {
         <div>
           <Link to={`/products/${product.slug}`} className="block">
             <div className="w-full aspect-3/4 bg-neutral-100 border-2 border-black relative flex items-center justify-center mb-6 overflow-hidden">
-              {product.images && product.images[0] ? (
-                <img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-              ) : (
-                getProductSvg(product.slug, index)
-              )}
+              <ProductHoverMedia
+                coverImage={product.images && product.images[0]}
+                hoverVideo={product.hoverVideo}
+                alt={product.name}
+                fallbackSvg={getProductSvg(product.slug, index)}
+                isMobile={isMobile}
+              />
               {isSoldOut && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
                   <span className="font-space font-bold text-white text-xs uppercase tracking-widest border border-white px-3 py-1">
                     SOLD OUT
                   </span>
@@ -142,10 +201,10 @@ function ProductCard({ product, index, onAdd, isAdded, isMobile }) {
             disabled={isSoldOut}
             whileTap={!isSoldOut ? { scale: 0.92 } : {}}
             className={`flex items-center gap-1.5 font-space font-bold uppercase text-xs px-4 py-2.5 border-2 border-black transition-colors duration-100 cursor-pointer ${isSoldOut
-                ? 'opacity-40 cursor-not-allowed bg-neutral-100 text-neutral-400'
-                : isAdded
-                  ? 'bg-black text-white'
-                  : 'bg-black text-white hover:bg-white hover:text-black'
+              ? 'opacity-40 cursor-not-allowed bg-neutral-100 text-neutral-400'
+              : isAdded
+                ? 'bg-black text-white'
+                : 'bg-black text-white hover:bg-white hover:text-black'
               }`}
           >
             {isAdded ? <Check size={13} /> : <Plus size={13} />}

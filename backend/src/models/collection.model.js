@@ -24,6 +24,10 @@ const collectionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    hoverVideo: {
+      type: String,
+      default: '',
+    },
     description: {
       type: String,
       default: '',

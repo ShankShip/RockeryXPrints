@@ -30,32 +30,34 @@ prodRouter.route('/add-category').post(
 prodRouter.route('/delete-category/:categoryId').delete(deleteCategory)
 
 prodRouter.route('/add-collection').post(
-    upload.fields([{
-        name: "coverImage", 
-        maxCount: 1 
-    }]), 
+    upload.fields([
+        { name: "coverImage", maxCount: 1 },
+        { name: "hoverVideo", maxCount: 1 }
+    ]), 
     addCollection
 )
 
 prodRouter.route('/update-collection/:collectionId').post(
-    upload.fields([{
-        name: "coverImage", 
-        maxCount: 1 
-    }]), 
+    upload.fields([
+        { name: "coverImage", maxCount: 1 },
+        { name: "hoverVideo", maxCount: 1 }
+    ]), 
     updateCollection
 )
 
 prodRouter.route('/delete-collection/:collectionId').delete(deleteCollection)
 
-prodRouter.route('/add-product').post(upload.fields([{ 
-        name: "images" 
-    }]), 
+prodRouter.route('/add-product').post(upload.fields([
+        { name: "images", maxCount: 10 },
+        { name: "hoverVideo", maxCount: 1 }
+    ]), 
     addProduct
 )
 
-prodRouter.route('/update-product/:productId').post(upload.fields([{
-        name: "images"
-    }]), 
+prodRouter.route('/update-product/:productId').post(upload.fields([
+        { name: "images", maxCount: 10 },
+        { name: "hoverVideo", maxCount: 1 }
+    ]), 
     updateProduct
 )
 

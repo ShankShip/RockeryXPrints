@@ -59,6 +59,10 @@ const productSchema = new mongoose.Schema({
             message: 'A product must have at least one image upload.'
         }
     }],
+    hoverVideo: {
+        type: String,
+        default: ''
+    },
 
     sku: {
         type: String,

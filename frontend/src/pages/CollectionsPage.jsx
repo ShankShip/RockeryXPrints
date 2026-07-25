@@ -1,10 +1,10 @@
 // src/pages/CollectionsPage.jsx
 // Shows all manual Collections from the backend in a brutalist grid, with Admin option to add & delete collections
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
-import { ArrowRight, Layers, Plus, Upload, X, Trash2, Tag, Edit2 } from 'lucide-react';
+import { ArrowRight, Layers, Plus, Upload, X, Trash2, Tag, Edit2, Film } from 'lucide-react';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
@@ -12,6 +12,70 @@ import { mockCollections, getProductSvg } from '../data/mockData';
 import { getCollections, addCollectionAPI, updateCollectionAPI, deleteCollectionAPI } from '../services/api';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.35 };
+
+// ── HoverMedia Component ──────────────────────────────────────────────────────
+// Custom component that renders static cover image by default, and plays looping video on hover if present
+function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
+  const videoRef = useRef(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Only use video if hoverVideo is actually uploaded
+  const videoSrc = hoverVideo || '';
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (videoSrc && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => { });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (videoSrc && videoRef.current) {
+      videoRef.current.pause();
+    }
+  };
+
+  return (
+    <div
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-black"
+    >
+      {/* Video Element Underneath (Only if video is uploaded) */}
+      {videoSrc ? (
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none z-0"
+        />
+      ) : null}
+
+      {/* Static Cover Image / SVG Overlay */}
+      {coverImage ? (
+        <img
+          src={coverImage}
+          alt={alt || 'Collection Cover'}
+          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${
+            isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          }`}
+        />
+      ) : (
+        <div
+          className={`w-full h-full flex items-center justify-center p-6 bg-stripes-light transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${
+            isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          {fallbackSvg}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CollectionsPage() {
   const navigate = useNavigate();
@@ -27,6 +91,7 @@ export default function CollectionsPage() {
   const [searchTag, setSearchTag] = useState('');
   const [description, setDescription] = useState('');
   const [coverImageFile, setCoverImageFile] = useState(null);
+  const [hoverVideoFile, setHoverVideoFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [popupInfo, setPopupInfo] = useState({ open: false, title: '', message: '', type: 'info' });
@@ -40,6 +105,7 @@ export default function CollectionsPage() {
   const [editSearchTag, setEditSearchTag] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editCoverImageFile, setEditCoverImageFile] = useState(null);
+  const [editHoverVideoFile, setEditHoverVideoFile] = useState(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editErrorMsg, setEditErrorMsg] = useState('');
 
@@ -49,6 +115,7 @@ export default function CollectionsPage() {
     setEditSearchTag(col.searchTag || col.slug || '');
     setEditDescription(col.description || '');
     setEditCoverImageFile(null);
+    setEditHoverVideoFile(null);
     setEditErrorMsg('');
   };
 
@@ -74,6 +141,9 @@ export default function CollectionsPage() {
     if (editCoverImageFile) {
       formData.append('coverImage', editCoverImageFile);
     }
+    if (editHoverVideoFile) {
+      formData.append('hoverVideo', editHoverVideoFile);
+    }
 
     updateCollectionAPI(editingCollection._id, formData)
       .then(() => {
@@ -84,6 +154,7 @@ export default function CollectionsPage() {
           type: 'success'
         });
         setEditingCollection(null);
+        setEditHoverVideoFile(null);
         fetchCollectionsList();
       })
       .catch((err) => {
@@ -136,6 +207,9 @@ export default function CollectionsPage() {
     formData.append('searchTag', searchTag.trim().toLowerCase());
     formData.append('description', description.trim());
     formData.append('coverImage', coverImageFile);
+    if (hoverVideoFile) {
+      formData.append('hoverVideo', hoverVideoFile);
+    }
 
     addCollectionAPI(formData)
       .then(() => {
@@ -149,6 +223,7 @@ export default function CollectionsPage() {
         setSearchTag('');
         setDescription('');
         setCoverImageFile(null);
+        setHoverVideoFile(null);
         setFormOpen(false);
         fetchCollectionsList();
       })
@@ -204,13 +279,11 @@ export default function CollectionsPage() {
               </div>
 
               <div className="flex flex-col items-start md:items-end gap-3">
-
                 {isAdmin && (
                   <button
                     onClick={() => { setFormOpen(!formOpen); setErrorMsg(''); }}
-                    className={`font-space font-bold text-xs uppercase px-5 py-3 border-2 border-black flex items-center gap-2 transition-colors duration-100 cursor-pointer shadow-solid-sm ${
-                      formOpen ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'
-                    }`}
+                    className={`font-space font-bold text-xs uppercase px-5 py-3 border-2 border-black flex items-center gap-2 transition-colors duration-100 cursor-pointer shadow-solid-sm ${formOpen ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'
+                      }`}
                   >
                     {formOpen ? <X size={14} /> : <Plus size={14} />}
                     <span>{formOpen ? 'CANCEL CREATION' : 'ADD NEW COLLECTION'}</span>
@@ -285,22 +358,42 @@ export default function CollectionsPage() {
                     />
                   </div>
 
-                  <div className="mb-6">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block mb-1.5">
-                      COVER IMAGE *
-                    </label>
-                    <div className="relative border-2 border-dashed border-black bg-white p-6 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        required
-                        onChange={(e) => setCoverImageFile(e.target.files[0])}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <Upload size={20} className="mx-auto mb-2 opacity-50" />
-                      <span className="font-space text-xs font-bold uppercase block">
-                        {coverImageFile ? coverImageFile.name : 'CLICK TO UPLOAD COVER IMAGE'}
-                      </span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block mb-1.5">
+                        COVER IMAGE *
+                      </label>
+                      <div className="relative border-2 border-dashed border-black bg-white p-6 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          required
+                          onChange={(e) => setCoverImageFile(e.target.files[0])}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <Upload size={20} className="mx-auto mb-2 opacity-50" />
+                        <span className="font-space text-xs font-bold uppercase block truncate">
+                          {coverImageFile ? coverImageFile.name : 'CLICK TO UPLOAD COVER IMAGE'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block mb-1.5">
+                        HOVER VIDEO (OPTIONAL - .MP4 / .WEBM)
+                      </label>
+                      <div className="relative border-2 border-dashed border-black bg-white p-6 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm,video/*"
+                          onChange={(e) => setHoverVideoFile(e.target.files[0])}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <Film size={20} className="mx-auto mb-2 opacity-50" />
+                        <span className="font-space text-xs font-bold uppercase block truncate">
+                          {hoverVideoFile ? hoverVideoFile.name : 'CLICK TO UPLOAD HOVER VIDEO (.MP4, .WEBM)'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -350,25 +443,20 @@ export default function CollectionsPage() {
                       className="border-4 border-black bg-white flex flex-col justify-between group hover:shadow-solid-lg transition-all duration-200 relative overflow-hidden"
                     >
                       <div>
-                        {/* Cover Image Container */}
+                        {/* Cover Image / Video Container */}
                         <div
                           onClick={() => navigate(`/shop?tag=${encodeURIComponent(tagParam)}`)}
                           className="w-full h-64 border-b-4 border-black bg-neutral-100 relative overflow-hidden cursor-pointer flex items-center justify-center"
                         >
-                          {col.coverImage ? (
-                            <img
-                              src={col.coverImage}
-                              alt={col.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center p-6 bg-stripes-light">
-                              {getProductSvg(col.slug || 'anime', idx)}
-                            </div>
-                          )}
+                          <HoverMedia
+                            coverImage={col.coverImage}
+                            hoverVideo={col.hoverVideo}
+                            alt={col.name}
+                            fallbackSvg={getProductSvg(col.slug || 'anime', idx)}
+                          />
 
                           {/* Tag Badge */}
-                          <span className="absolute top-3 left-3 bg-black text-white font-space text-[10px] font-bold tracking-widest px-2.5 py-1 uppercase border border-white flex items-center gap-1.5 shadow-solid-sm z-10">
+                          <span className="absolute top-3 left-3 bg-black text-white font-space text-[10px] font-bold tracking-widest px-2.5 py-1 uppercase border border-white flex items-center gap-1.5 shadow-solid-sm z-20 pointer-events-none">
                             <Tag size={10} /> #{tagParam.toUpperCase()}
                           </span>
 
@@ -379,7 +467,7 @@ export default function CollectionsPage() {
                                 e.stopPropagation();
                                 handleEdit(col);
                               }}
-                              className="absolute top-3 right-3 bg-white text-black hover:bg-black hover:text-white border-2 border-black p-2 transition-colors duration-0 cursor-pointer shadow-solid-sm z-20"
+                              className="absolute top-3 right-3 bg-white text-black hover:bg-black hover:text-white border-2 border-black p-2 transition-colors duration-0 cursor-pointer shadow-solid-sm z-30"
                               title="EDIT COLLECTION"
                             >
                               <Edit2 size={14} />
@@ -493,7 +581,7 @@ export default function CollectionsPage() {
                 />
               </div>
 
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block mb-1.5">
                   UPDATE COVER IMAGE (OPTIONAL)
                 </label>
@@ -505,8 +593,26 @@ export default function CollectionsPage() {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
                   <Upload size={18} className="mx-auto mb-1 opacity-50" />
-                  <span className="font-space text-xs font-bold uppercase block">
+                  <span className="font-space text-xs font-bold uppercase block truncate">
                     {editCoverImageFile ? editCoverImageFile.name : 'CLICK TO REPLACE COVER IMAGE'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block mb-1.5">
+                  UPDATE HOVER VIDEO (OPTIONAL)
+                </label>
+                <div className="relative border-2 border-dashed border-black bg-white p-4 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/*"
+                    onChange={(e) => setEditHoverVideoFile(e.target.files[0])}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <Film size={18} className="mx-auto mb-1 opacity-50" />
+                  <span className="font-space text-xs font-bold uppercase block truncate">
+                    {editHoverVideoFile ? editHoverVideoFile.name : 'CLICK TO REPLACE HOVER VIDEO (.MP4, .WEBM)'}
                   </span>
                 </div>
               </div>

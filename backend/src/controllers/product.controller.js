@@ -257,21 +257,66 @@ const updateProduct = asyncHandler(async (req, res) => {
     let updatedImages = product.images; 
     let updatedHoverVideo = product.hoverVideo;
 
-    const newImagesPath = req.files?.images?.map(item => item?.path) || [];
-    
-    if (newImagesPath.length > 0) {
-        for (const oldImageUrl of product.images) {
-            await deleteOnCloudinary(oldImageUrl);
+    const { imageManifest } = req.body;
+
+    if (imageManifest) {
+        let parsedManifest = [];
+        try {
+            parsedManifest = JSON.parse(imageManifest);
+        } catch (e) {
+            throw new ApiError(400, "Invalid imageManifest format");
         }
 
-        const uploadedImages = [];
+        const newImagesPath = req.files?.images?.map(item => item?.path) || [];
+        const uploadedFilesMap = [];
         for (const path of newImagesPath) {
             const result = await uploadOnCloudinary(path);
             if (result && result.url) {
-                uploadedImages.push(result.url);
+                uploadedFilesMap.push(result.url);
             }
         }
-        updatedImages = uploadedImages;
+
+        const finalImages = [];
+        let fileIndexCounter = 0;
+
+        for (const item of parsedManifest) {
+            if (item.type === 'url' && item.url) {
+                finalImages.push(item.url);
+            } else if (item.type === 'file') {
+                if (uploadedFilesMap[fileIndexCounter]) {
+                    finalImages.push(uploadedFilesMap[fileIndexCounter]);
+                    fileIndexCounter++;
+                }
+            }
+        }
+
+        // Delete old Cloudinary images that are no longer present in finalImages
+        for (const oldUrl of product.images) {
+            if (oldUrl && !finalImages.includes(oldUrl)) {
+                await deleteOnCloudinary(oldUrl);
+            }
+        }
+
+        if (finalImages.length > 0) {
+            updatedImages = finalImages;
+        }
+    } else {
+        const newImagesPath = req.files?.images?.map(item => item?.path) || [];
+        
+        if (newImagesPath.length > 0) {
+            for (const oldImageUrl of product.images) {
+                await deleteOnCloudinary(oldImageUrl);
+            }
+
+            const uploadedImages = [];
+            for (const path of newImagesPath) {
+                const result = await uploadOnCloudinary(path);
+                if (result && result.url) {
+                    uploadedImages.push(result.url);
+                }
+            }
+            updatedImages = uploadedImages;
+        }
     }
 
     const newHoverVideoPath = req.files?.hoverVideo?.[0]?.path;

@@ -277,8 +277,23 @@ export default function CategoryDetailPage() {
 
   const handleFileChange = (e) => {
     if (e.target.files) {
-      setImageFiles(Array.from(e.target.files));
+      const newFiles = Array.from(e.target.files);
+      setImageFiles((prev) => [...prev, ...newFiles]);
     }
+  };
+
+  const moveImage = (index, direction) => {
+    const updated = [...imageFiles];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= updated.length) return;
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+    setImageFiles(updated);
+  };
+
+  const removeImage = (index) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addFeatureRow = () => setFeatureRows([...featureRows, { key: '', value: '' }]);
@@ -441,23 +456,23 @@ export default function CategoryDetailPage() {
                   </div>
                 </div>
 
-                {/* Multiple Images Upload & Required Hover Video */}
+                {/* Multiple Images Upload & Optional Hover Video */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-black">UPLOAD PRODUCT IMAGES * (MULTIPLE)</label>
                     <div className="relative border-2 border-dashed border-black bg-white p-5 flex flex-col items-center justify-center text-center">
                       <input
-                        type="file" multiple accept="image/*" required onChange={handleFileChange}
+                        type="file" multiple accept="image/*" required={imageFiles.length === 0} onChange={handleFileChange}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       />
                       <Upload size={20} className="text-neutral-400 mb-1" />
                       {imageFiles.length > 0 ? (
                         <span className="text-xs font-bold text-black uppercase">
-                          {imageFiles.length} FILES SELECTED
+                          + ADD MORE IMAGES ({imageFiles.length} SELECTED)
                         </span>
                       ) : (
                         <span className="text-xs text-neutral-400 uppercase">
-                          DRAG IMAGES OR CLICK TO UPLOAD
+                          CLICK OR DRAG TO UPLOAD IMAGES
                         </span>
                       )}
                     </div>
@@ -483,6 +498,67 @@ export default function CategoryDetailPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Re-orderable Image Thumbnails Grid */}
+                {imageFiles.length > 0 && (
+                  <div className="border-2 border-black bg-neutral-50 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-black">
+                        SEQUENCE & RE-ORDER IMAGES
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setImageFiles([])}
+                        className="text-[9px] font-bold uppercase text-red-600 hover:underline"
+                      >
+                        CLEAR ALL
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {imageFiles.map((file, idx) => {
+                        const previewUrl = URL.createObjectURL(file);
+                        return (
+                          <div key={idx} className="relative border-2 border-black bg-white p-1.5 flex flex-col justify-between shadow-solid-sm">
+                            <div className="relative aspect-3/4 w-full bg-neutral-100 border border-black overflow-hidden mb-1.5">
+                              <img src={previewUrl} alt={file.name} className="w-full h-full object-cover" />
+                              <span className="absolute top-1 left-1 text-[8px] font-black uppercase px-1.5 py-0.5 border border-black bg-black text-white">
+                                #{idx + 1}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-1">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => moveImage(idx, -1)}
+                                title="Move Left / Earlier"
+                                className="flex-1 bg-white hover:bg-black hover:text-white border border-black py-0.5 text-[10px] font-bold uppercase disabled:opacity-20 disabled:hover:bg-white disabled:hover:text-black cursor-pointer"
+                              >
+                                ←
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === imageFiles.length - 1}
+                                onClick={() => moveImage(idx, 1)}
+                                title="Move Right / Later"
+                                className="flex-1 bg-white hover:bg-black hover:text-white border border-black py-0.5 text-[10px] font-bold uppercase disabled:opacity-20 disabled:hover:bg-white disabled:hover:text-black cursor-pointer"
+                              >
+                                →
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeImage(idx)}
+                                title="Remove Image"
+                                className="bg-red-600 text-white hover:bg-black border border-black px-1.5 py-0.5 text-[10px] font-bold uppercase cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Features key-value list */}
                 <div className="flex flex-col gap-2">
@@ -622,10 +698,10 @@ export default function CategoryDetailPage() {
                               onClick={(e) => !isSoldOut && handleAdd(product, e)}
                               disabled={isSoldOut}
                               className={`flex items-center gap-1 font-space font-bold uppercase text-[8px] sm:text-[9px] md:text-xs px-2 sm:px-3 py-2 border-2 border-black transition-colors duration-100 touch-manipulation ${isSoldOut
-                                  ? 'opacity-40 cursor-not-allowed bg-neutral-100'
-                                  : isAdded
-                                    ? 'bg-black text-white'
-                                    : 'bg-black text-white hover:bg-white hover:text-black'
+                                ? 'opacity-40 cursor-not-allowed bg-neutral-100'
+                                : isAdded
+                                  ? 'bg-black text-white'
+                                  : 'bg-black text-white hover:bg-white hover:text-black'
                                 }`}
                             >
                               <Plus size={10} />

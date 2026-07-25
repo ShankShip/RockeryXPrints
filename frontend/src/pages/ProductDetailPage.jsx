@@ -105,6 +105,8 @@ export default function ProductDetailPage() {
   const [editTagsInput, setEditTagsInput] = useState('');
   const [editFeatures, setEditFeatures] = useState([]);
   const [editImageFiles, setEditImageFiles] = useState([]);
+  const [editImageList, setEditImageList] = useState([]);
+  const [editHoverVideoFile, setEditHoverVideoFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
 
@@ -171,6 +173,16 @@ export default function ProductDetailPage() {
           setEditSku(data.sku || '');
           setEditTagsInput(data.searchTags?.join(', ') || '');
           setEditFeatures(data.features || []);
+          setEditHoverVideoFile(null);
+          if (Array.isArray(data.images)) {
+            setEditImageList(
+              data.images.map((url, idx) => ({
+                id: `url_${idx}_${Date.now()}`,
+                type: 'url',
+                url
+              }))
+            );
+          }
 
           // Fetch related products strictly matching the FIRST searchTag
           const firstSearchTag = Array.isArray(data.searchTags) && data.searchTags.length > 0
@@ -287,6 +299,32 @@ export default function ProductDetailPage() {
     );
   };
 
+  const handleEditFileAdd = (e) => {
+    if (e.target.files) {
+      const newItems = Array.from(e.target.files).map((file, idx) => ({
+        id: `file_${idx}_${Date.now()}_${Math.random()}`,
+        type: 'file',
+        file,
+        url: URL.createObjectURL(file)
+      }));
+      setEditImageList((prev) => [...prev, ...newItems]);
+    }
+  };
+
+  const moveEditImage = (index, direction) => {
+    const updated = [...editImageList];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= updated.length) return;
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+    setEditImageList(updated);
+  };
+
+  const removeEditImage = (index) => {
+    setEditImageList((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Submit Edit API
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
@@ -310,8 +348,21 @@ export default function ProductDetailPage() {
     const featuresArr = editFeatures.filter((f) => f.key && f.value);
     formData.append('features', JSON.stringify(featuresArr));
 
-    for (let i = 0; i < editImageFiles.length; i++) {
-      formData.append('images', editImageFiles[i]);
+    // Construct imageManifest for exact sequential ordering
+    const manifest = editImageList.map((item) => {
+      if (item.type === 'url') return { type: 'url', url: item.url };
+      return { type: 'file' };
+    });
+    formData.append('imageManifest', JSON.stringify(manifest));
+
+    // Append new file objects in exact sequence
+    const newFileItems = editImageList.filter((item) => item.type === 'file');
+    for (let i = 0; i < newFileItems.length; i++) {
+      formData.append('images', newFileItems[i].file);
+    }
+
+    if (editHoverVideoFile) {
+      formData.append('hoverVideo', editHoverVideoFile);
     }
 
     try {
@@ -408,10 +459,10 @@ export default function ProductDetailPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-120px)] border-b-4 border-black">
 
           {/* ── LEFT: INTERACTIVE IMAGE GALLERY (7 cols on lg) ── */}
-          <div className="lg:col-span-7 border-b-4 lg:border-b-0 lg:border-r-4 border-black bg-[#FAFAFA] flex flex-col justify-between relative select-none">
+          <div className="lg:col-span-7 border-b-4 lg:border-b-0 lg:border-r-4 border-black bg-[#FAFAFA] flex flex-col justify-start relative select-none">
 
             {/* Main Display Canvas */}
-            <div className="relative flex-1 flex items-center justify-center p-6 md:p-12 min-h-95 md:min-h-130">
+            <div className="relative flex items-center justify-center p-6 md:p-12 min-h-95 md:min-h-130">
 
               {/* Fullscreen Magnify Button */}
               <button
@@ -617,17 +668,85 @@ export default function ProductDetailPage() {
                     </div>
                   </div>
 
-                  {/* Replace images */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-500">REPLACE IMAGES (OPTIONAL)</label>
-                    <div className="relative border-2 border-dashed border-black bg-white p-3 text-center cursor-pointer">
+                  {/* Re-orderable Product Images Section */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-black">
+                        PRODUCT IMAGES
+                      </label>
+                      <span className="text-[9px] font-bold uppercase text-neutral-400">
+                        {editImageList.length} TOTAL IMAGES
+                      </span>
+                    </div>
+
+                    {/* Image Thumbnails Grid */}
+                    {editImageList.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-neutral-50 p-2.5 border-2 border-black">
+                        {editImageList.map((item, idx) => (
+                          <div key={item.id || idx} className="relative border-2 border-black bg-white p-1.5 flex flex-col justify-between shadow-solid-sm">
+                            <div className="relative aspect-3/4 w-full bg-neutral-100 border border-black overflow-hidden mb-1">
+                              <img src={item.url} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />
+                              <span className="absolute top-1 left-1 text-[8px] font-black uppercase px-1.5 py-0.5 border border-black bg-black text-white">
+                                #{idx + 1}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-1">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => moveEditImage(idx, -1)}
+                                title="Move Earlier"
+                                className="flex-1 bg-white hover:bg-black hover:text-white border border-black py-0.5 text-[9px] font-bold uppercase disabled:opacity-20 disabled:hover:bg-white disabled:hover:text-black cursor-pointer"
+                              >
+                                ←
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === editImageList.length - 1}
+                                onClick={() => moveEditImage(idx, 1)}
+                                title="Move Later"
+                                className="flex-1 bg-white hover:bg-black hover:text-white border border-black py-0.5 text-[9px] font-bold uppercase disabled:opacity-20 disabled:hover:bg-white disabled:hover:text-black cursor-pointer"
+                              >
+                                →
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeEditImage(idx)}
+                                title="Delete Image"
+                                className="bg-red-600 text-white hover:bg-black border border-black px-1.5 py-0.5 text-[9px] font-bold uppercase cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add More Images Button */}
+                    <div className="relative border-2 border-dashed border-black bg-white p-3 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
                       <input
-                        type="file" multiple accept="image/*" onChange={(e) => setEditImageFiles(Array.from(e.target.files))}
+                        type="file" multiple accept="image/*" onChange={handleEditFileAdd}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       />
                       <Upload size={14} className="mx-auto text-neutral-400 mb-1" />
-                      <span className="text-[10px] font-bold uppercase text-neutral-500">
-                        {editImageFiles.length > 0 ? `${editImageFiles.length} FILES SELECTED` : 'SELECT IMAGES TO OVERWRITE'}
+                      <span className="text-[10px] font-bold uppercase text-black block">
+                        + UPLOAD & APPEND MORE IMAGES
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Update Hover Video (Optional) */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-500">UPDATE HOVER VIDEO (OPTIONAL - .MP4 / .WEBM)</label>
+                    <div className="relative border-2 border-dashed border-black bg-white p-3 text-center cursor-pointer hover:bg-neutral-50 transition-colors">
+                      <input
+                        type="file" accept="video/mp4,video/webm,video/*" onChange={(e) => setEditHoverVideoFile(e.target.files[0])}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <span className="text-[10px] font-bold uppercase text-black truncate block">
+                        {editHoverVideoFile ? editHoverVideoFile.name : 'CLICK TO UPLOAD NEW HOVER VIDEO'}
                       </span>
                     </div>
                   </div>

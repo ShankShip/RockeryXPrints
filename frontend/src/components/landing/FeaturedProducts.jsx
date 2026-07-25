@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useDispatch } from 'react-redux';
@@ -7,6 +7,17 @@ import { addToCart } from '../../store/cartSlice';
 import { getProductSvg, mockProducts } from '../../data/mockData';
 
 const SPRING = { stiffness: 280, damping: 26, mass: 0.8 };
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
 
 // ── Skeleton card ─────────────────────────────────────────────────────────────
 function SkeletonCard() {
@@ -26,7 +37,7 @@ function SkeletonCard() {
 }
 
 // ── Mouse-tracked tilt product card ──────────────────────────────────────────
-function ProductCard({ product, index, onAdd, isAdded }) {
+function ProductCard({ product, index, onAdd, isAdded, isMobile }) {
   const cardRef = useRef(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -41,11 +52,11 @@ function ProductCard({ product, index, onAdd, isAdded }) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMove = useCallback((e) => {
-    if (!cardRef.current) return;
+    if (isMobile || !cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     mouseX.set((e.clientX - rect.left - rect.width / 2) / (rect.width / 2));
     mouseY.set((e.clientY - rect.top - rect.height / 2) / (rect.height / 2));
-  }, [mouseX, mouseY]);
+  }, [isMobile, mouseX, mouseY]);
 
   const handleLeave = useCallback(() => {
     mouseX.set(0);
@@ -58,14 +69,14 @@ function ProductCard({ product, index, onAdd, isAdded }) {
   return (
     <motion.div
       ref={cardRef}
-      initial={{ y: 50, opacity: 0 }}
-      whileInView={{ y: 0, opacity: 1 }}
+      initial={isMobile ? false : { y: 50, opacity: 0 }}
+      whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
       viewport={{ once: true, margin: '-80px' }}
-      transition={{ type: 'spring', bounce: 0, duration: 0.6, delay: index * 0.1 }}
-      onMouseMove={handleMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleLeave}
-      style={isHovered ? { rotateX, rotateY, transformPerspective: 900, transformStyle: 'preserve-3d', zIndex: 10 } : {}}
+      transition={isMobile ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.6, delay: index * 0.1 }}
+      onMouseMove={!isMobile ? handleMove : undefined}
+      onMouseEnter={!isMobile ? () => setIsHovered(true) : undefined}
+      onMouseLeave={!isMobile ? handleLeave : undefined}
+      style={!isMobile && isHovered ? { rotateX, rotateY, transformPerspective: 900, transformStyle: 'preserve-3d', zIndex: 10 } : {}}
       className="bg-black relative overflow-hidden w-70 sm:w-[320px] md:w-auto shrink-0 snap-center md:snap-align-none border-2 border-black md:border-0"
     >
       {/* Glare — always rendered, opacity driven by isHovered */}
@@ -150,6 +161,7 @@ function ProductCard({ product, index, onAdd, isAdded }) {
 export default function FeaturedProducts({ products, loading = false }) {
   const dispatch = useDispatch();
   const [added, setAdded] = useState({});
+  const isMobile = useIsMobile();
 
   const handleAdd = (product, e) => {
     e.preventDefault();
@@ -168,10 +180,10 @@ export default function FeaturedProducts({ products, loading = false }) {
 
       {/* Header */}
       <motion.div
-        initial={{ y: 30, opacity: 0 }}
-        whileInView={{ y: 0, opacity: 1 }}
+        initial={isMobile ? false : { y: 30, opacity: 0 }}
+        whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
         viewport={{ once: true, margin: '-50px' }}
-        transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
+        transition={isMobile ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.5 }}
         className="border-b-4 border-black px-6 py-8 md:px-12 bg-white flex flex-col md:flex-row md:items-end justify-between gap-4"
       >
         <div>
@@ -184,14 +196,14 @@ export default function FeaturedProducts({ products, loading = false }) {
         </div>
         <Link to="/shop">
           <motion.div
-            whileHover={{ x: -4, y: -4, boxShadow: '6px 6px 0px 0px #000000' }}
-            whileTap={{ x: 1, y: 1, boxShadow: '1px 1px 0px 0px #000000' }}
+            whileHover={!isMobile ? { x: -4, y: -4, boxShadow: '6px 6px 0px 0px #000000' } : undefined}
+            whileTap={!isMobile ? { x: 1, y: 1, boxShadow: '1px 1px 0px 0px #000000' } : undefined}
             transition={{ type: 'spring', stiffness: 500, damping: 20 }}
             className="font-space text-sm font-bold uppercase border-2 border-black px-5 py-2.5 bg-white flex items-center gap-2 cursor-pointer shadow-solid-sm"
           >
             <motion.div
               className="w-3 h-3 bg-black"
-              whileHover={{ rotate: 45 }}
+              whileHover={!isMobile ? { rotate: 45 } : undefined}
               transition={{ type: 'spring', stiffness: 500, damping: 15 }}
             />
             <span>VIEW ALL</span>
@@ -223,6 +235,7 @@ export default function FeaturedProducts({ products, loading = false }) {
               index={index}
               isAdded={!!added[product._id]}
               onAdd={handleAdd}
+              isMobile={isMobile}
             />
           ))}
       </div>

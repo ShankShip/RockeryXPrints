@@ -1,9 +1,8 @@
 // src/components/landing/CollectionsShowcase.jsx
 // Visual Manual Collections Showcase component with infinite scrolling marquee effect
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
-import { ArrowRight, Tag } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { getCollections } from '../../services/api';
 import { mockCollections, getProductSvg } from '../../data/mockData';
 
@@ -11,7 +10,9 @@ export default function CollectionsShowcase() {
   const navigate = useNavigate();
   const [collections, setCollections] = useState(mockCollections);
   const [loading, setLoading] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [direction, setDirection] = useState(1); // 1 = forward (left scroll), -1 = reverse (right scroll)
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     getCollections()
@@ -29,13 +30,53 @@ export default function CollectionsShowcase() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Multiply items to ensure seamless infinite loop
-  const marqueeItems = [...collections, ...collections, ...collections, ...collections];
+  // Continuous smooth auto-scroll effect with infinite looping
+  useEffect(() => {
+    let animationId;
+    const container = scrollRef.current;
+    if (!container || loading) return;
+
+    const speed = 1.2;
+
+    const step = () => {
+      if (!isHovered && container) {
+        container.scrollLeft += direction * speed;
+
+        // Infinite loop wrapping
+        const maxScroll = container.scrollWidth / 2;
+        if (container.scrollLeft >= maxScroll) {
+          container.scrollLeft -= maxScroll / 2;
+        } else if (container.scrollLeft <= 0 && direction === -1) {
+          container.scrollLeft += maxScroll / 2;
+        }
+      }
+      animationId = requestAnimationFrame(step);
+    };
+
+    animationId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationId);
+  }, [isHovered, direction, loading, collections]);
+
+  const handleShiftLeft = () => {
+    setDirection(-1);
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+    }
+  };
+
+  const handleShiftRight = () => {
+    setDirection(1);
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+    }
+  };
+
+  // Multiply items for infinite loop
+  const marqueeItems = [...collections, ...collections, ...collections, ...collections, ...collections, ...collections];
 
   return (
     <section id="collections-showcase" className="scroll-mt-20 bg-black text-white border-b-4 border-black select-none overflow-hidden py-10">
 
-      {/* Infinite Marquee Track */}
       {loading ? (
         <div className="flex gap-6 px-6 overflow-hidden max-w-7xl mx-auto">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -46,26 +87,46 @@ export default function CollectionsShowcase() {
           ))}
         </div>
       ) : (
-        <div className="relative w-full overflow-hidden py-2 group">
+        /* Manual Boundary Container with Hover Handler */
+        <div
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className="relative w-full overflow-hidden py-4 group border-y-2 border-neutral-800 hover:border-white transition-colors duration-200"
+        >
           {/* Ambient Edge Fades */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 md:w-24 bg-linear-to-r from-black to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-12 md:w-24 bg-linear-to-l from-black to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-16 md:w-28 bg-gradient-to-r from-black via-black/80 to-transparent z-20 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 md:w-28 bg-gradient-to-l from-black via-black/80 to-transparent z-20 pointer-events-none" />
 
-          <style>{`
-            @keyframes marqueeTrack {
-              0% { transform: translate3d(0, 0, 0); }
-              100% { transform: translate3d(-50%, 0, 0); }
-            }
-            .animate-marquee-smooth {
-              animation: marqueeTrack ${Math.max(25, collections.length * 6)}s linear infinite;
-              will-change: transform;
-            }
-            .animate-marquee-smooth:hover {
-              animation-play-state: paused;
-            }
-          `}</style>
+          {/* Left Navigation Button */}
+          <button
+            onClick={handleShiftLeft}
+            aria-label="Shift Marquee Left"
+            className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-30 bg-black text-white hover:bg-white hover:text-black border-2 border-white p-2.5 md:p-3 shadow-solid transition-colors duration-100 cursor-pointer touch-manipulation"
+          >
+            <ChevronLeft size={20} />
+          </button>
 
-          <div className="flex gap-6 w-max px-3 animate-marquee-smooth">
+          {/* Right Navigation Button */}
+          <button
+            onClick={handleShiftRight}
+            aria-label="Shift Marquee Right"
+            className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-30 bg-black text-white hover:bg-white hover:text-black border-2 border-white p-2.5 md:p-3 shadow-solid transition-colors duration-100 cursor-pointer touch-manipulation"
+          >
+            <ChevronRight size={20} />
+          </button>
+
+          {/* Marquee Scroll Track */}
+          <div
+            ref={scrollRef}
+            className="flex gap-6 overflow-x-auto py-2 px-12 md:px-20 scrollbar-none cursor-grab active:cursor-grabbing"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <style>{`
+              .scrollbar-none::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+
             {marqueeItems.map((col, idx) => {
               const tagParam = col.searchTag || col.slug || col.name;
               return (

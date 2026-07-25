@@ -328,6 +328,11 @@ const updateProduct = asyncHandler(async (req, res) => {
         if (uploadedHoverVideo && uploadedHoverVideo.url) {
             updatedHoverVideo = uploadedHoverVideo.url;
         }
+    } else if (req.body.removeHoverVideo === 'true' || req.body.removeHoverVideo === true) {
+        if (product.hoverVideo) {
+            await deleteOnCloudinary(product.hoverVideo);
+        }
+        updatedHoverVideo = "";
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -690,6 +695,11 @@ const updateCollection = asyncHandler(async (req, res) => {
         if (newHoverVideo) {
             existingCollection.hoverVideo = newHoverVideo.url;
         }
+    } else if (req.body.removeHoverVideo === 'true' || req.body.removeHoverVideo === true) {
+        if (existingCollection.hoverVideo) {
+            await deleteOnCloudinary(existingCollection.hoverVideo);
+        }
+        existingCollection.hoverVideo = "";
     }
 
     await existingCollection.save();

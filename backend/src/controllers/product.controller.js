@@ -169,15 +169,14 @@ const addProduct = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Images are required to upload")
     }
 
-    const uploadPromises = imagesPath.map(path => uploadOnCloudinary(path))
-    const uploadResults = await Promise.all(uploadPromises)
-
-    const imageUrls = uploadResults.map(result => {
+    const imageUrls = [];
+    for (const path of imagesPath) {
+        const result = await uploadOnCloudinary(path);
         if (!result || !result.url) {
-            throw new ApiError(500, "Some or all images are not uploaded successfully")
+            throw new ApiError(500, "Some or all images failed to upload");
         }
-        return result.url
-    })
+        imageUrls.push(result.url);
+    }
 
     let hoverVideoUrl = "";
     if (hoverVideoPath) {
@@ -265,10 +264,14 @@ const updateProduct = asyncHandler(async (req, res) => {
             await deleteOnCloudinary(oldImageUrl);
         }
 
-        const uploadPromises = newImagesPath.map(path => uploadOnCloudinary(path));
-        const uploadResults = await Promise.all(uploadPromises);
-        
-        updatedImages = uploadResults.map(result => result.url);
+        const uploadedImages = [];
+        for (const path of newImagesPath) {
+            const result = await uploadOnCloudinary(path);
+            if (result && result.url) {
+                uploadedImages.push(result.url);
+            }
+        }
+        updatedImages = uploadedImages;
     }
 
     const newHoverVideoPath = req.files?.hoverVideo?.[0]?.path;

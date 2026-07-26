@@ -6,7 +6,8 @@ const uploadOnCloudinary = async (localFilePath) => {
     cloudinary.config({ 
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+        secure: true
     });
 
     try {
@@ -15,13 +16,19 @@ const uploadOnCloudinary = async (localFilePath) => {
         //upload the file on cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {resource_type: "auto"})
 
-        //file has been uploaded successfully
-        // console.log("File is uploaded on cloudinary ", response.url)
+        if (response && response.secure_url) {
+            response.url = response.secure_url;
+        } else if (response && response.url) {
+            response.url = response.url.replace(/^http:\/\//i, 'https://');
+        }
+
         fs.unlinkSync(localFilePath) // remove the locally saved temporary file as the upload operation is successful
         return response
     } catch (error) {
         console.log("Error at Cloudinary: ", error)
-        fs.unlinkSync(localFilePath) // remove the locally saved temporary file as the upload operation got failed
+        if (fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath) // remove the locally saved temporary file as the upload operation got failed
+        }
         return null
     }
 }
@@ -30,7 +37,8 @@ const deleteOnCloudinary = async (imgUrl, resourceType = 'auto') => {
     cloudinary.config({ 
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+        secure: true
     });
 
     try {

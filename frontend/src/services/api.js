@@ -10,6 +10,35 @@ const api = axios.create({
     headers: { 'Content-Type': 'application/json' },
 });
 
+// Recursively convert any http://res.cloudinary.com URLs to https://res.cloudinary.com
+const convertHttpToHttps = (data) => {
+    if (!data) return data;
+    if (typeof data === 'string') {
+        return data.replace(/^http:\/\/res\.cloudinary\.com/gi, 'https://res.cloudinary.com');
+    }
+    if (Array.isArray(data)) {
+        return data.map(convertHttpToHttps);
+    }
+    if (typeof data === 'object' && data !== null) {
+        const sanitized = {};
+        for (const key of Object.keys(data)) {
+            sanitized[key] = convertHttpToHttps(data[key]);
+        }
+        return sanitized;
+    }
+    return data;
+};
+
+api.interceptors.response.use(
+    (response) => {
+        if (response && response.data) {
+            response.data = convertHttpToHttps(response.data);
+        }
+        return response;
+    },
+    (error) => Promise.reject(error)
+);
+
 // ─── Health check ─────────────────────────────────────────────────────────
 export const checkHealthAPI = (timeoutMs = 120000) => api.get('/health', { timeout: timeoutMs });
 

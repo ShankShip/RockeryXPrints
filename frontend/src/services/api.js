@@ -63,6 +63,7 @@ export const getCollections = (isAdmin = false) => isAdmin ? api.get('/prods/adm
 export const getProducts = (params) => api.get('/prods/products', { params });
 export const getProductBySlug = (slug) => api.get(`/prods/products/${slug}`);
 export const addCategoryAPI = (data) => api.post('/prods/add-category', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const updateCategoryAPI = (categoryId, data) => api.post(`/prods/update-category/${categoryId}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const deleteCategoryAPI = (categoryId) => api.delete(`/prods/delete-category/${categoryId}`);
 export const addCollectionAPI = (data) => api.post('/prods/add-collection', data, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const updateCollectionAPI = (collectionId, data) => api.post(`/prods/update-collection/${collectionId}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });

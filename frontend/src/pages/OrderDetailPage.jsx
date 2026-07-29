@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { ArrowLeft, Package, Truck, Compass, CheckCircle, AlertOctagon, XOctagon } from 'lucide-react';
 import { getOrderByIdAPI, cancelMyOrderAPI, updateOrderStatusAPI } from '../services/api';
 import Navbar from '../components/landing/Navbar';
+import { SkeletonDetail } from '../components/common/Skeleton';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.25 };
 
@@ -81,12 +82,11 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black font-space flex flex-col items-center justify-center p-6 text-center select-none">
+      <div className="min-h-screen bg-white text-black font-space flex flex-col p-6">
         <Navbar />
-        <div className="w-10 h-10 border-4 border-black border-t-transparent animate-spin mb-4 shrink-0 rounded-none" />
-        <span className="font-space text-xs font-bold uppercase tracking-widest text-neutral-400">
-          LOADING ORDER DETAILS...
-        </span>
+        <div className="pt-24 max-w-5xl mx-auto w-full">
+          <SkeletonDetail />
+        </div>
       </div>
     );
   }

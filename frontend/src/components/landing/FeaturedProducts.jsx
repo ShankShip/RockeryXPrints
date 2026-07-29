@@ -4,7 +4,7 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { Plus, Check } from 'lucide-react';
 import { addToCart } from '../../store/cartSlice';
-import { getProductSvg, mockProducts } from '../../data/mockData';
+
 
 const SPRING = { stiffness: 280, damping: 26, mass: 0.8 };
 
@@ -131,16 +131,20 @@ function ProductCard({ product, index, onAdd, isAdded, isMobile }) {
   return (
     <motion.div
       ref={cardRef}
-      initial={isMobile ? false : { y: 50, opacity: 0 }}
-      whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
+      initial={{ y: isMobile ? 0 : 50, opacity: isMobile ? 1 : 0 }}
+      whileInView={{ y: 0, opacity: 1 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={isMobile ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.6, delay: index * 0.1 }}
       onMouseMove={!isMobile ? handleMove : undefined}
       onMouseEnter={!isMobile ? () => setIsHovered(true) : undefined}
       onMouseLeave={!isMobile ? handleLeave : undefined}
-      style={!isMobile && isHovered ? { rotateX, rotateY, transformPerspective: 900, transformStyle: 'preserve-3d', zIndex: 10 } : {}}
-      className="bg-black relative overflow-hidden w-70 sm:w-[320px] md:w-auto shrink-0 snap-center md:snap-align-none border-2 border-black md:border-0"
+      style={{ zIndex: !isMobile && isHovered ? 10 : undefined }}
+      className="relative w-72 sm:w-[320px] md:w-auto shrink-0 snap-center md:snap-align-none"
     >
+      <motion.div
+        style={!isMobile ? { rotateX, rotateY, transformPerspective: 900 } : {}}
+        className="bg-black relative overflow-hidden h-full w-full border-2 border-black md:border-0 shadow-solid md:shadow-none"
+      >
       {/* Glare — always rendered, opacity driven by isHovered */}
       <motion.div
         className="absolute inset-0 pointer-events-none z-30"
@@ -159,7 +163,7 @@ function ProductCard({ product, index, onAdd, isAdded, isMobile }) {
                 coverImage={product.images && product.images[0]}
                 hoverVideo={product.hoverVideo}
                 alt={product.name}
-                fallbackSvg={getProductSvg(product.slug, index)}
+                fallbackSvg={<div className="w-full h-full bg-neutral-100 flex items-center justify-center text-neutral-400 font-space text-xs">NO IMAGE</div>}
                 isMobile={isMobile}
               />
               {isSoldOut && (
@@ -212,6 +216,7 @@ function ProductCard({ product, index, onAdd, isAdded, isMobile }) {
           </motion.button>
         </div>
       </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -229,18 +234,15 @@ export default function FeaturedProducts({ products, loading = false }) {
     setTimeout(() => setAdded((prev) => ({ ...prev, [product._id]: false })), 1800);
   };
 
-  const displayProducts =
-    Array.isArray(products) && products.length >= 4
-      ? products.slice(0, 4)
-      : mockProducts.slice(0, 4);
+  const displayProducts = Array.isArray(products) ? products.slice(0, 4) : [];
 
   return (
     <section id="collections" className="scroll-mt-20 bg-white border-b-4 border-black select-none overflow-hidden">
 
       {/* Header */}
       <motion.div
-        initial={isMobile ? false : { y: 30, opacity: 0 }}
-        whileInView={isMobile ? undefined : { y: 0, opacity: 1 }}
+        initial={{ y: isMobile ? 0 : 30, opacity: isMobile ? 1 : 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
         viewport={{ once: true, margin: '-50px' }}
         transition={isMobile ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.5 }}
         className="border-b-4 border-black px-6 py-8 md:px-12 bg-white flex flex-col md:flex-row md:items-end justify-between gap-4"
@@ -270,7 +272,7 @@ export default function FeaturedProducts({ products, loading = false }) {
         </Link>
       </motion.div>
 
-      {/* Grid / Horizontal Scroll on Mobile */}
+      {/* Horizontal Scroll on Mobile */}
       <div
         id="collections-grid"
         className="flex md:grid overflow-x-auto overflow-y-hidden md:overflow-hidden snap-x snap-mandatory md:snap-none gap-6 md:gap-0.5 p-6 md:p-0.5 bg-white md:bg-black md:grid-cols-4"
@@ -283,7 +285,7 @@ export default function FeaturedProducts({ products, loading = false }) {
         `}</style>
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white w-70 sm:w-[320px] md:w-auto shrink-0 snap-center md:snap-align-none border-2 border-black md:border-0">
+            <div key={i} className="bg-white w-72 sm:w-[320px] md:w-auto shrink-0 snap-center md:snap-align-none border-2 border-black md:border-0">
               <SkeletonCard />
             </div>
           ))

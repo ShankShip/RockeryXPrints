@@ -27,6 +27,11 @@ prodRouter.route('/add-category').post(
     addCategory
 )
 
+prodRouter.route('/update-category/:categoryId').post(
+    upload.fields([{ name: "coverImage", maxCount: 1 }]), 
+    updateCategory
+)
+
 prodRouter.route('/delete-category/:categoryId').delete(deleteCategory)
 
 prodRouter.route('/add-collection').post(

@@ -25,8 +25,8 @@ const BrutalInput = ({ label, id, name, type = 'text', value, onChange, required
         required={required}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="w-full bg-transparent border-b-4 border-black px-0 py-3 font-space text-sm text-black placeholder:text-neutral-400 focus:outline-none pr-10"
-        style={{ fontSize: '16px' }} /* prevents iOS zoom on focus */
+        className="input-brutal pr-10"
+        style={{ fontSize: '16px', paddingTop: '0.75rem', paddingBottom: '0.75rem', paddingLeft: 0, paddingRight: '2.5rem' }} /* prevents iOS zoom on focus */
       />
       {rightSlot && (
         <div className="absolute right-0 top-1/2 -translate-y-1/2">{rightSlot}</div>
@@ -200,7 +200,7 @@ export default function AuthPage() {
             whileTap={{ scale: 0.98, boxShadow: '0px 0px 0px 0px #000000' }}
             transition={spring}
             disabled={loading}
-            className="w-full bg-black text-white font-space font-bold uppercase text-sm py-4 md:py-5 border-2 border-black shadow-solid flex items-center justify-center gap-2 mt-1 hover:bg-white hover:text-black transition-colors duration-75 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+            className="btn-brutal w-full text-sm py-4 md:py-5 shadow-solid mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'PROCESSING...' : mode === 'login' ? 'LOGIN' : 'CREATE ACCOUNT'}
             <ArrowRight size={16} />

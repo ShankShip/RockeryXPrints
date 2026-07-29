@@ -24,7 +24,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { addToCart as addToCartSlice } from '../store/cartSlice';
-import { getProductSvg, mockProducts } from '../data/mockData';
+import { SkeletonDetail } from '../components/common/Skeleton';
 import { getProductBySlug, updateProductAPI, deleteProductAPI, getProducts, addOrUpdateReviewAPI, getProductReviewsAPI, deleteReviewAPI } from '../services/api';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
@@ -214,7 +214,7 @@ export default function ProductDetailPage() {
                 setRelatedProducts(matched.slice(0, 4));
               }
             })
-            .catch(() => setRelatedProducts(mockProducts.slice(0, 4)));
+            .catch(() => {});
         } else {
           setErrorMsg('PRODUCT NOT REGISTERED IN INVENTORY.');
         }
@@ -403,12 +403,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-white text-black font-space">
         <Navbar />
-        <div className="pt-36 pb-20 px-6 text-center text-xs uppercase tracking-widest text-neutral-500">
-          <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="inline-block mr-2">
-            ■
-          </motion.span>
-          LOADING PRODUCT INVENTORY...
-        </div>
+        <SkeletonDetail />
       </div>
     );
   }
@@ -435,7 +430,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const svgIcon = getProductSvg(product.slug, 0);
+
   const saving = product.mrp - product.sellingPrice;
   const discountPercent = product.mrp ? Math.round((saving / product.mrp) * 100) : 0;
   const totalImages = product.images && product.images.length > 0 ? product.images.length : 1;
@@ -489,7 +484,7 @@ export default function ProductDetailPage() {
                   />
                 ) : (
                   <div className="w-64 h-80 flex items-center justify-center p-8 bg-stripes-light border-2 border-black">
-                    {svgIcon}
+                    <div className="font-space text-xs font-bold text-neutral-400">NO IMAGE</div>
                   </div>
                 )}
               </div>
@@ -530,7 +525,7 @@ export default function ProductDetailPage() {
                     className={`aspect-square p-2 bg-neutral-50 flex items-center justify-center transition-all cursor-pointer relative ${activeThumb === i ? 'bg-white ring-4 ring-inset ring-black opacity-100' : 'opacity-50 hover:opacity-100'
                       }`}
                   >
-                    <div className="w-6 h-6 text-neutral-400">{svgIcon}</div>
+                    <div className="w-6 h-6 flex items-center justify-center font-space text-[8px] text-neutral-400">N/A</div>
                   </button>
                 ))
               )}
@@ -860,11 +855,11 @@ export default function ProductDetailPage() {
                       disabled={product.stock === 0}
                       whileTap={{ scale: 0.98 }}
                       transition={spring}
-                      className={`flex-1 flex items-center justify-center gap-3 font-space font-black uppercase text-sm py-4 border-4 border-black shadow-solid transition-colors cursor-pointer ${product.stock === 0
-                        ? 'bg-neutral-100 text-neutral-400 border-neutral-300 cursor-not-allowed shadow-none'
+                      className={`btn-brutal flex-1 py-4 border-4 border-black text-sm shadow-solid ${product.stock === 0
+                        ? '!bg-neutral-100 !text-neutral-400 !border-neutral-300 cursor-not-allowed shadow-none hover:!bg-neutral-100 hover:!text-neutral-400'
                         : added
-                          ? 'bg-black text-white'
-                          : 'bg-black text-white hover:bg-white hover:text-black'
+                          ? '!bg-black !text-white'
+                          : ''
                         }`}
                     >
                       <ShoppingBag size={18} />
@@ -873,7 +868,7 @@ export default function ProductDetailPage() {
 
                     <button
                       onClick={handleShare}
-                      className="bg-white hover:bg-black text-black hover:text-white border-4 border-black p-4 font-space font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-solid transition-colors cursor-pointer shrink-0"
+                      className="btn-brutal !bg-white !text-black hover:!bg-black hover:!text-white border-4 border-black p-4 text-xs shadow-solid shrink-0"
                       title="SHARE THIS PRODUCT"
                     >
                       <Share2 size={18} />
@@ -952,7 +947,8 @@ export default function ProductDetailPage() {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <style>{`.scrollbar-none::-webkit-scrollbar { display: none; }`}</style>
                 {relatedProducts.map((relProd, idx) => (
                   <motion.div
                     key={relProd._id || idx}
@@ -961,7 +957,7 @@ export default function ProductDetailPage() {
                     viewport={{ once: true, margin: '-40px' }}
                     transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: idx * 0.08 }}
                     onClick={() => navigate(`/products/${relProd.slug}`)}
-                    className="border-2 border-black bg-white p-4 flex flex-col justify-between group hover:shadow-solid cursor-pointer transition-all duration-150"
+                    className="border-2 border-black bg-white p-4 flex flex-col justify-between group hover:shadow-solid cursor-pointer transition-all duration-150 shrink-0 w-64 sm:w-auto"
                   >
                     <div>
                       <div className="w-full aspect-3/4 bg-neutral-100 border-2 border-black relative mb-4 overflow-hidden flex items-center justify-center">
@@ -973,7 +969,7 @@ export default function ProductDetailPage() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center p-4">
-                            {getProductSvg(relProd.slug, idx)}
+                            <div className="font-space text-[10px] font-bold text-neutral-400">NO IMAGE</div>
                           </div>
                         )}
                       </div>

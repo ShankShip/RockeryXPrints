@@ -8,6 +8,7 @@ import { logoutThunk, setUser } from '../store/authSlice';
 import { updateDetails, changePassword, getOrders, getAllOrdersAPI, updateOrderStatusAPI, updateAvatarAPI } from '../services/api';
 import Navbar from '../components/landing/Navbar';
 import Popup from '../components/landing/Popup';
+import { SkeletonRow } from '../components/common/Skeleton';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.25 };
 
@@ -156,7 +157,18 @@ function OrderCard({ order, idx, isAdmin, onStatusChange }) {
 }
 
 /* ── User Orders Tab ── */
-function OrdersTab({ orders }) {
+function OrdersTab({ orders, loading }) {
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="font-inter font-black text-3xl md:text-4xl uppercase tracking-tighter leading-none mb-4">ORDER HISTORY</h2>
+        <SkeletonRow />
+        <SkeletonRow />
+        <SkeletonRow />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-end justify-between mb-6">
@@ -238,9 +250,20 @@ function OrdersTab({ orders }) {
 }
 
 /* ── Admin Orders Tab ── */
-function AdminOrdersTab({ allOrders, onStatusChange }) {
+function AdminOrdersTab({ allOrders, onStatusChange, loading }) {
   const [updatingId, setUpdatingId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h2 className="font-inter font-black text-3xl md:text-4xl uppercase tracking-tighter leading-none mb-4">ALL SYSTEM ORDERS</h2>
+        <SkeletonRow />
+        <SkeletonRow />
+        <SkeletonRow />
+      </div>
+    );
+  }
 
   const handleStatusChange = async (orderId, newStatus) => {
     setUpdatingId(orderId);
@@ -1004,9 +1027,9 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={spring}
             >
-              {activeTab === 'orders' && <OrdersTab orders={orders} />}
+              {activeTab === 'orders' && <OrdersTab orders={orders} loading={loading} />}
               {activeTab === 'all-orders' && user.role === 'admin' && (
-                <AdminOrdersTab allOrders={allOrders} onStatusChange={handleOrderStatusChange} />
+                <AdminOrdersTab allOrders={allOrders} onStatusChange={handleOrderStatusChange} loading={loading} />
               )}
               {activeTab === 'profile' && (
                 <ProfileTab user={user} onUpdateDetails={handleUpdateDetails} />

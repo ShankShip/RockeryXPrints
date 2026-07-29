@@ -8,7 +8,7 @@ import { ArrowRight, Layers, Plus, Upload, X, Trash2, Tag, Edit2, Film } from 'l
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
-import { mockCollections, getProductSvg } from '../data/mockData';
+import { SkeletonCollectionCard } from '../components/common/Skeleton';
 import { getCollections, addCollectionAPI, updateCollectionAPI, deleteCollectionAPI } from '../services/api';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.35 };
@@ -18,11 +18,20 @@ const spring = { type: 'spring', bounce: 0, duration: 0.35 };
 function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
   const videoRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Only use video if hoverVideo is actually uploaded
   const videoSrc = hoverVideo || '';
 
   const handleMouseEnter = () => {
+    if (isMobile) return;
     setIsHovered(true);
     if (videoSrc && videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -31,11 +40,18 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
   };
 
   const handleMouseLeave = () => {
+    if (isMobile) return;
     setIsHovered(false);
     if (videoSrc && videoRef.current) {
       videoRef.current.pause();
     }
   };
+
+  useEffect(() => {
+    if (isMobile && videoSrc && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isMobile, videoSrc]);
 
   return (
     <div
@@ -51,6 +67,7 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
           muted
           loop
           playsInline
+          autoPlay={isMobile}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none z-0"
         />
       ) : null}
@@ -61,16 +78,16 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
           src={coverImage}
           alt={alt || 'Collection Cover'}
           className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${
-            isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+            (isMobile || isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
           }`}
         />
       ) : (
         <div
           className={`w-full h-full flex items-center justify-center p-6 bg-stripes-light transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${
-            isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+            (isMobile || isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
           }`}
         >
-          {fallbackSvg}
+          <div className="w-full h-full text-xs font-space text-neutral-400 flex items-center justify-center">NO IMAGE</div>
         </div>
       )}
     </div>
@@ -82,7 +99,7 @@ export default function CollectionsPage() {
   const { user } = useSelector((s) => s.auth);
   const isAdmin = user?.role === 'admin';
 
-  const [collections, setCollections] = useState(mockCollections);
+  const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
 
@@ -175,13 +192,9 @@ export default function CollectionsPage() {
         const data = res.data?.data;
         if (Array.isArray(data) && data.length > 0) {
           setCollections(data);
-        } else {
-          setCollections(mockCollections);
         }
       })
-      .catch(() => {
-        setCollections(mockCollections);
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   };
 
@@ -414,15 +427,12 @@ export default function CollectionsPage() {
             )}
           </AnimatePresence>
 
-          {/* Collections Grid */}
           <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-16">
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="border-4 border-black p-6 bg-white animate-pulse h-96 flex flex-col justify-between">
-                    <div className="w-full h-48 bg-neutral-200" />
-                    <div className="h-6 bg-neutral-200 w-3/4 mt-4" />
-                    <div className="h-4 bg-neutral-200 w-1/2 mt-2" />
+                  <div key={i}>
+                    <SkeletonCollectionCard />
                   </div>
                 ))}
               </div>
@@ -457,7 +467,6 @@ export default function CollectionsPage() {
                             coverImage={col.coverImage}
                             hoverVideo={col.hoverVideo}
                             alt={col.name}
-                            fallbackSvg={getProductSvg(col.slug || 'anime', idx)}
                           />
 
                           {/* Tag Badge */}

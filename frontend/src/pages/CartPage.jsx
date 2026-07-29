@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ChevronDown } from 'lucide-react';
 import { removeFromCart, clearCart, updateQuantity } from '../store/cartSlice';
 import { createOrder } from '../services/api';
-import { mockProducts } from '../data/mockData';
+
 import Navbar from '../components/landing/Navbar';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
@@ -26,8 +26,8 @@ const Field = ({ label, id, type = 'text', value, onChange, required, placeholde
       onChange={onChange}
       required={required}
       placeholder={placeholder}
-      style={{ fontSize: '16px' }} /* prevent iOS zoom */
-      className="w-full bg-transparent border-b-4 border-black px-0 py-2.5 font-space text-sm text-black placeholder:text-neutral-300 focus:outline-none"
+      style={{ fontSize: '16px', paddingTop: '0.625rem', paddingBottom: '0.625rem', paddingLeft: 0, paddingRight: 0 }} /* prevent iOS zoom */
+      className="input-brutal"
     />
   </div>
 );
@@ -423,7 +423,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => setStep(0)}
-                      className="flex items-center justify-center gap-2 bg-white text-black font-space font-bold uppercase text-sm px-6 py-4 border-2 border-black hover:bg-black hover:text-white transition-colors duration-75 touch-manipulation cursor-pointer"
+                      className="btn-brutal bg-white text-black hover:bg-black hover:text-white px-6 py-4"
                     >
                       ← BACK
                     </button>
@@ -431,7 +431,7 @@ export default function CartPage() {
                       type="submit"
                       whileTap={{ scale: 0.98 }}
                       transition={spring}
-                      className="flex-1 flex items-center justify-center gap-2 bg-black text-white font-space font-bold uppercase text-sm px-8 py-4 border-2 border-black shadow-solid hover:bg-white hover:text-black transition-colors duration-75 touch-manipulation cursor-pointer"
+                      className="btn-brutal flex-1 px-8 py-4 shadow-solid"
                     >
                       REVIEW ORDER <ArrowRight size={16} />
                     </motion.button>

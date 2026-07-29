@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { getCollections } from '../../services/api';
-import { mockCollections, getProductSvg } from '../../data/mockData';
+
 
 function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
   const videoRef = useRef(null);
@@ -58,7 +58,7 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
             isCardHovered && videoSrc ? 'opacity-0' : 'opacity-100'
           }`}
         >
-          {fallbackSvg}
+          <div className="text-neutral-400 font-space text-xs">NO IMAGE</div>
         </div>
       )}
     </div>
@@ -67,11 +67,19 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
 
 export default function CollectionsShowcase() {
   const navigate = useNavigate();
-  const [collections, setCollections] = useState(mockCollections);
+  const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [direction, setDirection] = useState(1); // 1 = forward (left scroll), -1 = reverse (right scroll)
   const scrollRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     getCollections()
@@ -79,13 +87,9 @@ export default function CollectionsShowcase() {
         const data = res.data?.data;
         if (Array.isArray(data) && data.length > 0) {
           setCollections(data);
-        } else {
-          setCollections(mockCollections);
         }
       })
-      .catch(() => {
-        setCollections(mockCollections);
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -160,7 +164,7 @@ export default function CollectionsShowcase() {
           <button
             onClick={handleShiftLeft}
             aria-label="Shift Marquee Left"
-            className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-30 bg-black text-white hover:bg-white hover:text-black border-2 border-white p-2.5 md:p-3 shadow-solid transition-colors duration-100 cursor-pointer touch-manipulation"
+            className="hidden md:block absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-30 bg-black text-white hover:bg-white hover:text-black border-2 border-white p-2.5 md:p-3 shadow-solid transition-colors duration-100 cursor-pointer touch-manipulation"
           >
             <ChevronLeft size={20} />
           </button>
@@ -169,7 +173,7 @@ export default function CollectionsShowcase() {
           <button
             onClick={handleShiftRight}
             aria-label="Shift Marquee Right"
-            className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-30 bg-black text-white hover:bg-white hover:text-black border-2 border-white p-2.5 md:p-3 shadow-solid transition-colors duration-100 cursor-pointer touch-manipulation"
+            className="hidden md:block absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-30 bg-black text-white hover:bg-white hover:text-black border-2 border-white p-2.5 md:p-3 shadow-solid transition-colors duration-100 cursor-pointer touch-manipulation"
           >
             <ChevronRight size={20} />
           </button>
@@ -186,7 +190,17 @@ export default function CollectionsShowcase() {
               }
             `}</style>
 
-            {marqueeItems.map((col, idx) => {
+            {loading ? Array.from({ length: 6 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="w-72 sm:w-80 h-[280px] border-2 border-neutral-800 bg-neutral-950 p-4 shrink-0 shadow-solid-sm animate-pulse flex flex-col justify-between"
+              >
+                <div className="w-full h-44 border border-neutral-800 bg-neutral-900 mb-3" />
+                <div className="h-4 bg-neutral-800 w-1/3 mb-1" />
+                <div className="h-5 bg-neutral-800 w-2/3 mb-2" />
+                <div className="h-4 bg-neutral-800 w-full" />
+              </div>
+            )) : marqueeItems.map((col, idx) => {
               const tagParam = col.searchTag || col.slug || col.name;
               return (
                 <div
@@ -200,7 +214,7 @@ export default function CollectionsShowcase() {
                       coverImage={col.coverImage}
                       hoverVideo={col.hoverVideo}
                       alt={col.name}
-                      fallbackSvg={getProductSvg(col.slug || 'anime', idx)}
+
                     />
                   </div>
 

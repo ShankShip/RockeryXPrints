@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector, useDispatch } from 'react-redux';
 import { Heart, Plus, Trash2, ArrowLeft, Upload, X, Film } from 'lucide-react';
 import { addToCart } from '../store/cartSlice';
-import { getProductSvg, mockProducts, mockCategories } from '../data/mockData';
+import { SkeletonCard } from '../components/common/Skeleton';
 import { getCategories, getProducts, addProductAPI, deleteCategoryAPI } from '../services/api';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
@@ -18,10 +18,19 @@ const spring = { type: 'spring', bounce: 0, duration: 0.35 };
 function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
   const videoRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const videoSrc = hoverVideo || '';
 
   const handleMouseEnter = () => {
+    if (isMobile) return;
     setIsHovered(true);
     if (videoSrc && videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -30,11 +39,18 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
   };
 
   const handleMouseLeave = () => {
+    if (isMobile) return;
     setIsHovered(false);
     if (videoSrc && videoRef.current) {
       videoRef.current.pause();
     }
   };
+
+  useEffect(() => {
+    if (isMobile && videoSrc && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isMobile, videoSrc]);
 
   return (
     <div
@@ -49,6 +65,7 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
           muted
           loop
           playsInline
+          autoPlay={isMobile}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none z-0"
         />
       ) : null}
@@ -57,15 +74,15 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
         <img
           src={coverImage}
           alt={alt || 'Product Image'}
-          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${(isMobile || isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
             }`}
         />
       ) : (
         <div
-          className={`w-full h-full flex items-center justify-center p-4 bg-stripes transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+          className={`w-full h-full flex items-center justify-center p-6 bg-stripes-light transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${(isMobile || isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
             }`}
         >
-          {fallbackSvg}
+          <div className="w-full h-full text-xs font-space text-neutral-400 flex items-center justify-center bg-neutral-100">NO IMAGE</div>
         </div>
       )}
     </div>
@@ -133,8 +150,7 @@ export default function CategoryDetailPage() {
       // Get category object by fetching all categories and finding by slug
       const catRes = await getCategories(isAdmin);
       const allCats = catRes.data?.data || [];
-      const foundCat = allCats.find((c) => c.slug === categorySlug) ||
-        mockCategories.find((c) => c.slug === categorySlug);
+      const foundCat = allCats.find((c) => c.slug === categorySlug);
 
       if (!foundCat) {
         setErrorMsg('CATEGORY NOT REGISTERED.');
@@ -147,27 +163,9 @@ export default function CategoryDetailPage() {
       const prodRes = await getProducts({ category: foundCat._id });
       const catProds = prodRes.data?.data?.docs || prodRes.data?.data?.products || prodRes.data?.data || [];
 
-      // Pad with mock products of same category if list is empty for visual richness
-      if (catProds.length === 0) {
-        const fallbacks = mockProducts.filter(
-          (p) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') === foundCat.slug ||
-            p.category?.slug === foundCat.slug
-        );
-        setProducts(fallbacks);
-      } else {
-        setProducts(catProds);
-      }
+      setProducts(catProds);
     } catch (err) {
-      // Fallback
-      const foundCat = mockCategories.find((c) => c.slug === categorySlug);
-      if (foundCat) {
-        setCategory(foundCat);
-        const fallbacks = mockProducts.filter(
-          (p) => p.category?.name?.toLowerCase().replace(/\s+/g, '-') === foundCat.slug ||
-            p.category?.slug === foundCat.slug
-        );
-        setProducts(fallbacks);
-      }
+      setErrorMsg('ERROR FETCHING CATEGORY DETAILS.');
     } finally {
       setLoading(false);
     }
@@ -597,9 +595,12 @@ export default function CategoryDetailPage() {
 
         {/* ── Loading state ── */}
         {loading && (
-          <div className="px-5 py-8 font-space text-xs uppercase tracking-widest text-neutral-400 flex items-center gap-2">
-            <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }}>■</motion.span>
-            LOADING CATEGORY ARCHIVES...
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white p-4 border-2 border-black">
+                <SkeletonCard />
+              </div>
+            ))}
           </div>
         )}
 
@@ -655,7 +656,7 @@ export default function CategoryDetailPage() {
                               coverImage={product.images && product.images[0]}
                               hoverVideo={product.hoverVideo}
                               alt={product.name}
-                              fallbackSvg={getProductSvg(product.slug, idx)}
+
                             />
 
                             {isSoldOut && (

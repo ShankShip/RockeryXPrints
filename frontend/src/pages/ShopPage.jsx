@@ -6,21 +6,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { Heart, Plus, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { addToCart } from '../store/cartSlice';
-import { getProductSvg, mockCategories } from '../data/mockData';
+import { SkeletonCard } from '../components/common/Skeleton';
 import { getProducts, getCategories } from '../services/api';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 
-const PRODUCT_SVGS = [
-  <svg viewBox="0 0 60 60" fill="none" className="w-full h-full"><circle cx="30" cy="30" r="22" stroke="black" strokeWidth="2.5"/><path d="M20 36s3-5 10-5 10 5 10 5" stroke="black" strokeWidth="2.5" strokeLinecap="round"/><circle cx="22" cy="26" r="3" fill="black"/><circle cx="38" cy="26" r="3" fill="black"/><path d="M30 4v8M30 48v8M4 30h8M48 30h8" stroke="black" strokeWidth="2" strokeLinecap="round"/></svg>,
-  <svg viewBox="0 0 60 60" fill="none" className="w-full h-full"><path d="M4 30C12 16 22 10 30 10s18 6 26 20c-8 14-18 20-26 20S12 44 4 30Z" stroke="black" strokeWidth="2.5"/><circle cx="30" cy="30" r="9" stroke="black" strokeWidth="2.5"/><circle cx="30" cy="30" r="4" fill="black"/></svg>,
-  <svg viewBox="0 0 60 60" fill="none" className="w-full h-full"><circle cx="30" cy="30" r="24" stroke="black" strokeWidth="3"/><circle cx="30" cy="30" r="14" stroke="black" strokeWidth="2"/><path d="M30 4v52M4 30h52M10 10l40 40M10 50L50 10" stroke="black" strokeWidth="1.5"/></svg>,
-  <svg viewBox="0 0 60 60" fill="none" className="w-full h-full"><path d="M30 6L36 22H54L40 32L46 48L30 38L14 48L20 32L6 22H24Z" stroke="black" strokeWidth="2.5"/></svg>,
-  <svg viewBox="0 0 60 60" fill="none" className="w-full h-full"><circle cx="30" cy="30" r="16" stroke="black" strokeWidth="3"/><ellipse cx="30" cy="30" rx="28" ry="10" stroke="black" strokeWidth="2"/><path d="M30 4v8M30 48v8" stroke="black" strokeWidth="2" strokeLinecap="round"/></svg>,
-  <svg viewBox="0 0 60 60" fill="none" className="w-full h-full"><rect x="8" y="8" width="44" height="44" stroke="black" strokeWidth="3"/><path d="M8 8L52 52M52 8L8 52" stroke="black" strokeWidth="2.5"/><circle cx="30" cy="30" r="8" stroke="black" strokeWidth="2" fill="white"/><circle cx="26" cy="28" r="2.5" fill="black"/><circle cx="34" cy="28" r="2.5" fill="black"/></svg>,
-];
+
 
 const SORT_OPTIONS = [
   { value: 'popular',    label: 'MOST POPULAR' },
@@ -203,15 +196,15 @@ export default function ShopPage() {
         </div>
 
         {/* Loading indicator */}
-        {loading && (
-          <div className="px-5 py-4 font-space text-xs uppercase tracking-widest text-neutral-400 flex items-center gap-2 border-b-2 border-black">
-            <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }}>■</motion.span>
-            LOADING INVENTORY...
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white p-4 border-2 border-black">
+                <SkeletonCard />
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Product grid */}
-        {sorted.length === 0 && !loading ? (
+        ) : sorted.length === 0 ? (
           <div className="border-b-4 border-black px-5 py-20 text-center">
             <p className="font-inter font-black text-4xl uppercase tracking-tighter text-neutral-200 mb-4">NO PRINTS FOUND</p>
             <button onClick={() => setTag('all')} className="font-space font-bold text-xs uppercase border-2 border-black px-6 py-3 hover:bg-black hover:text-white transition-colors touch-manipulation">
@@ -248,8 +241,8 @@ export default function ShopPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20">
-                            {PRODUCT_SVGS[idx % PRODUCT_SVGS.length]}
+                          <div className="w-full h-full flex items-center justify-center text-xs font-space text-neutral-400">
+                            NO IMAGE
                           </div>
                         )}
 

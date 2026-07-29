@@ -3,40 +3,24 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { ArrowRight, ShoppingBag, Zap } from 'lucide-react';
-import { getProductSvg, mockProducts } from '../../data/mockData';
+
 
 const SPRING_CONFIG = { stiffness: 220, damping: 28, mass: 0.8 };
-const CARD_SPRING  = { type: 'spring', bounce: 0, duration: 0.4 };
+const CARD_SPRING = { type: 'spring', bounce: 0, duration: 0.7 };
 
-// ─── Mouse-tracked 3D Perspective card ──────────────────────────────────────
-function PerspectiveCard({ prod, index, isStackHovered, isHovered, onEnter, onLeave, onClick, screenSize }) {
-  const cardRef = useRef(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+// ─── Perspective Card ──────────────────────────────────────────────────────
+function PerspectiveCard({ prod, index, isStackHovered, isHovered, screenSize, onEnter, onLeave, onClick }) {
+  const ptrX = useMotionValue(0);
+  const ptrY = useMotionValue(0);
+  const rotateX = useSpring(useTransform(ptrY, [-1, 1], [12, -12]), SPRING_CONFIG);
+  const rotateY = useSpring(useTransform(ptrX, [-1, 1], [-12, 12]), SPRING_CONFIG);
+  const glareX = useTransform(ptrX, [-1, 1], [0, 100]);
+  const glareY = useTransform(ptrY, [-1, 1], [0, 100]);
 
-  const rotateX = useSpring(useTransform(mouseY, [-1, 1], [12, -12]), SPRING_CONFIG);
-  const rotateY = useSpring(useTransform(mouseX, [-1, 1], [-12, 12]), SPRING_CONFIG);
-  const glareX  = useTransform(mouseX, [-1, 1], [0, 100]);
-  const glareY  = useTransform(mouseY, [-1, 1], [0, 100]);
   const glareBackground = useTransform(
     [glareX, glareY],
     ([gx, gy]) => `radial-gradient(ellipse at ${gx}% ${gy}%, rgba(255,255,255,0.18) 0%, transparent 65%)`
   );
-
-  const handleMouseMove = useCallback((e) => {
-    if (!cardRef.current || !isHovered) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const cx   = rect.left + rect.width  / 2;
-    const cy   = rect.top  + rect.height / 2;
-    mouseX.set((e.clientX - cx) / (rect.width  / 2));
-    mouseY.set((e.clientY - cy) / (rect.height / 2));
-  }, [isHovered, mouseX, mouseY]);
-
-  const handleMouseLeave = useCallback(() => {
-    mouseX.set(0);
-    mouseY.set(0);
-    onLeave();
-  }, [mouseX, mouseY, onLeave]);
 
   // Fan-out position logic
   let dist = 160;
@@ -57,28 +41,38 @@ function PerspectiveCard({ prod, index, isStackHovered, isHovered, onEnter, onLe
     if (cardId === 1) xTarget = -dist;
     if (cardId === 3) xTarget = dist;
     const scaleTarget = isHovered ? 1.0 : 0.76;
-    const yTarget     = isHovered ? -30 : 12;
+    const yTarget = isHovered ? -30 : 12;
     animTarget = {
       x: xTarget, y: yTarget, rotate: 0, scale: scaleTarget,
+      // Middle card (2) prioritized when hovered, otherwise maintain strict visual order
       zIndex: isHovered ? 30 : cardId === 2 ? 22 : 15,
     };
   }
 
   return (
     <motion.div
-      ref={cardRef}
       animate={animTarget}
       transition={CARD_SPRING}
-      onMouseEnter={onEnter}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
+      onMouseEnter={() => onEnter(cardId)}
+      onMouseLeave={() => { onLeave(); ptrX.set(0); ptrY.set(0); }}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        ptrX.set((e.clientX - cx) / (rect.width / 2));
+        ptrY.set((e.clientY - cy) / (rect.height / 2));
+      }}
       onClick={onClick}
-      style={isHovered ? { rotateX, rotateY, transformPerspective: 900, transformStyle: 'preserve-3d' } : {}}
-      className="absolute w-full h-full bg-white border-8 border-black shadow-solid cursor-pointer select-none"
+      className="absolute w-full h-full cursor-pointer"
+      style={{ zIndex: isHovered ? 30 : undefined }}
     >
+      <motion.div
+        style={{ rotateX, rotateY, transformPerspective: 900, backgroundColor: 'white' }}
+        className={`absolute inset-0 border-8 border-black shadow-solid select-none pointer-events-none ${!prod.name ? 'animate-pulse' : ''}`}
+      >
       {/* Specular glare — always mounted, opacity animates */}
       <motion.div
-        className="absolute inset-0 pointer-events-none z-20"
+        className="absolute inset-0 z-20"
         animate={{ opacity: isHovered ? 1 : 0 }}
         transition={{ duration: 0.2 }}
         style={{ background: glareBackground }}
@@ -95,23 +89,34 @@ function PerspectiveCard({ prod, index, isStackHovered, isHovered, onEnter, onLe
               draggable={false}
             />
           ) : (
-            getProductSvg(prod.slug, index)
+            <div className="w-full h-full bg-neutral-100 flex items-center justify-center text-neutral-400 font-space text-xs">NO IMAGE</div>
           )}
         </div>
         <div className="flex justify-center items-center font-space text-xs font-bold mt-2">
           <span className="truncate mr-2 uppercase">{prod.name}</span>
         </div>
       </div>
+      </motion.div>
     </motion.div>
   );
 }
 
 // ─── Main Hero ───────────────────────────────────────────────────────────────
-export default function Hero({ products }) {
+export default function Hero({ products, loading }) {
   const navigate = useNavigate();
-  const [screenSize, setScreenSize]       = useState('desktop');
+  const [screenSize, setScreenSize] = useState('desktop');
   const [isStackHovered, setIsStackHovered] = useState(false);
-  const [hoveredCard, setHoveredCard]       = useState(null);
+  const [isUnwrapped, setIsUnwrapped] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState(null);
+
+  useEffect(() => {
+    if (isStackHovered) {
+      const timer = setTimeout(() => setIsUnwrapped(true), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setIsUnwrapped(false);
+    }
+  }, [isStackHovered]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -123,10 +128,7 @@ export default function Hero({ products }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const displayProducts =
-    Array.isArray(products) && products.length >= 3
-      ? products.slice(0, 3)
-      : mockProducts.slice(0, 3);
+  const displayProducts = Array.isArray(products) ? products.slice(0, 3) : [];
 
   return (
     <section
@@ -242,7 +244,7 @@ export default function Hero({ products }) {
 
         {/* CSS 3D Card Stack */}
         <div
-          className="relative w-70 h-92.5 sm:w-[320px] sm:h-105 flex items-center justify-center cursor-pointer md:cursor-default"
+          className="relative w-70 h-92.5 sm:w-[320px] sm:h-105 flex items-center justify-center cursor-pointer md:cursor-default before:absolute before:-inset-x-24 sm:before:-inset-x-48 before:-inset-y-16 before:z-0 before:content-['']"
           style={{ perspective: '1200px' }}
           onMouseEnter={() => setIsStackHovered(true)}
           onMouseLeave={() => { setIsStackHovered(false); setHoveredCard(null); }}
@@ -252,16 +254,18 @@ export default function Hero({ products }) {
             }
           }}
         >
-          {displayProducts.map((prod, index) => (
+          {(loading ? [{}, {}, {}] : displayProducts).map((prod, index) => (
             <PerspectiveCard
               key={prod._id ?? index}
               prod={prod}
               index={index}
               isStackHovered={isStackHovered}
-              isHovered={hoveredCard === index + 1}
-              onEnter={() => setHoveredCard(index + 1)}
+              isHovered={isUnwrapped && hoveredCard === index + 1}
+              onEnter={setHoveredCard}
               onLeave={() => setHoveredCard(null)}
-              onClick={() => navigate(`/products/${prod.slug}`)}
+              onClick={() => {
+                if (!loading && prod.slug) navigate(`/products/${prod.slug}`);
+              }}
               screenSize={screenSize}
             />
           ))}

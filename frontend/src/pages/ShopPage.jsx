@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
-import { Heart, Plus, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Heart, Plus, SlidersHorizontal, ChevronDown, X, Loader2 } from 'lucide-react';
 import { addToCart } from '../store/cartSlice';
 import { SkeletonCard } from '../components/common/Skeleton';
 import { getProducts, getCategories } from '../services/api';
+import { applyDeepSearch } from '../utils/searchUtils';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 
@@ -38,7 +39,6 @@ export default function ShopPage() {
   const activeTag = searchParams.get('tag') || 'all';
 
   const [products, setProducts]     = useState([]);
-  const [searchTags, setSearchTags] = useState([]);
   const [loading, setLoading]       = useState(true);
   const [wishlist, setWishlist]     = useState([]);
   const [added, setAdded]           = useState({});
@@ -46,8 +46,16 @@ export default function ShopPage() {
   const [sortOpen, setSortOpen]     = useState(false);
 
   // Search States
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [debouncedQuery, setDebouncedQuery] = useState(searchParams.get('search') || '');
+
+  // Sync URL search param to state if it changes externally
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch !== null && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -59,35 +67,19 @@ export default function ShopPage() {
   useEffect(() => {
     setLoading(true);
 
-    const params = {};
-    if (debouncedQuery) {
-      params.search = debouncedQuery;
-    }
-
-    // Fetch products matching search query
-    getProducts(params)
+    // Fetch full catalog once for robust local filtering
+    getProducts({ limit: 500 })
       .then((res) => {
         const data = res.data?.data?.docs || res.data?.data?.products || res.data?.data;
         if (Array.isArray(data)) {
           setProducts(data);
-          
-          // Compile unique tags
-          const tags = new Set();
-          data.forEach(p => {
-            if (Array.isArray(p.searchTags)) {
-              p.searchTags.forEach(t => {
-                if (t && t.trim() !== '') {
-                  tags.add(t.trim().toLowerCase());
-                }
-              });
-            }
-          });
-          setSearchTags(Array.from(tags).sort());
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [debouncedQuery]);
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   const toggleWishlist = (id) =>
     setWishlist((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
@@ -99,12 +91,13 @@ export default function ShopPage() {
     setTimeout(() => setAdded((p) => ({ ...p, [product._id]: false })), 1500);
   };
 
-  // Filter by searchTag
-  const filtered = activeTag === 'all'
+  // 1. Filter by activeTag
+  const baseProducts = activeTag === 'all'
     ? products
     : products.filter((p) => p.searchTags?.some(t => t.toLowerCase() === activeTag.toLowerCase()));
 
-  const sorted = sortProducts(filtered, sort);
+  // 2. Apply Deep Search Algorithm
+  const sorted = applyDeepSearch(baseProducts, debouncedQuery, sort, sortProducts);
 
   const setTag = (tag) => {
     if (tag === 'all') searchParams.delete('tag');
@@ -136,8 +129,8 @@ export default function ShopPage() {
         {/* Toolbar */}
         <div className="border-b-4 border-black flex items-stretch bg-white justify-between relative">
           {/* Search Input Bar */}
-          <div className="flex items-stretch bg-white w-full">
-            <div className="flex-1 flex items-center border-r-2 border-black">
+          <div className="flex items-stretch bg-white w-full relative">
+            <div className="flex-1 flex items-center relative">
               <span className="font-space font-bold text-[10px] md:text-xs uppercase tracking-widest text-neutral-500 px-5 py-4 border-r-2 border-black shrink-0">
                 SEARCH:
               </span>
@@ -146,17 +139,16 @@ export default function ShopPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="TYPE TO SEARCH BY FANDOM, TITLE OR TAGS..."
-                className="w-full h-full font-space font-bold text-xs uppercase px-5 py-4 outline-none placeholder-neutral-400 focus:bg-neutral-50 transition-colors"
+                className="w-full h-full font-space font-bold text-xs uppercase px-5 py-4 outline-none placeholder-neutral-400 focus:bg-neutral-50 transition-colors pr-14"
               />
+              <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                {searchQuery ? (
+                  <button onClick={() => setSearchQuery('')} className="text-black hover:text-neutral-500 transition-colors touch-manipulation">
+                    <X size={18} strokeWidth={3} />
+                  </button>
+                ) : null}
+              </div>
             </div>
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="font-space font-bold text-[10px] md:text-xs uppercase tracking-wider px-6 py-4 hover:bg-black hover:text-white transition-colors duration-75 border-r-2 border-black touch-manipulation shrink-0"
-              >
-                CLEAR
-              </button>
-            )}
           </div>
 
           <div className="relative shrink-0 flex items-stretch border-l-2 border-black">
@@ -212,7 +204,7 @@ export default function ShopPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 bg-black gap-0.5 p-0.5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 bg-black gap-0.5 p-0.5 transition-opacity duration-200">
             {sorted.map((product, idx) => {
               const isAdded      = added[product._id];
               const isSoldOut    = product.stock === 0;

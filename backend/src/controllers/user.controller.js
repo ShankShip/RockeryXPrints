@@ -5,6 +5,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Product } from "../models/product.model.js";
+import crypto from "crypto";
+import { sendOtpEmail, sendPasswordChangeOtpEmail } from "../utils/email.service.js";
 
 const options = {
     httpOnly: true,
@@ -378,6 +380,169 @@ const updateCartQuantity = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, populatedUser.cart, "Cart quantity updated"));
 });
 
+const sendVerificationOtp = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (user.isEmailVerified) {
+        throw new ApiError(400, "Your email address is already verified.");
+    }
+
+    // Generate cryptographically secure 6-digit random code
+    const otp = crypto.randomInt(100000, 1000000).toString();
+
+    // Set expiry to 15 minutes from now
+    user.emailVerificationOtp = otp;
+    user.emailVerificationOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    // Send email via Brevo service
+    const emailSent = await sendOtpEmail({
+        to: user.email,
+        name: user.fullName,
+        otp
+    });
+
+    // Even if BREVO_API_KEY is not configured in dev, print OTP to server console for testing convenience
+    if (!emailSent) {
+        console.log(`[Dev Mode / OTP Notice] Email Verification OTP for ${user.email}: ${otp}`);
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, null, "Verification OTP has been sent to your email address."));
+});
+
+const verifyEmailOtp = asyncHandler(async (req, res) => {
+    const { otp } = req.body;
+
+    if (!otp || !otp.trim()) {
+        throw new ApiError(400, "Please provide the verification code.");
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (user.isEmailVerified) {
+        const updatedUser = await User.findById(user._id).select("-password -refreshToken");
+        return res
+            .status(200)
+            .json(new ApiResponse(200, updatedUser, "Your email is already verified."));
+    }
+
+    if (!user.emailVerificationOtp || !user.emailVerificationOtpExpiry) {
+        throw new ApiError(400, "No verification OTP found. Please click 'Send OTP' to generate a new code.");
+    }
+
+    if (new Date() > new Date(user.emailVerificationOtpExpiry)) {
+        user.emailVerificationOtp = null;
+        user.emailVerificationOtpExpiry = null;
+        await user.save({ validateBeforeSave: false });
+        throw new ApiError(400, "Verification code has expired. Please click 'Send OTP' again.");
+    }
+
+    if (user.emailVerificationOtp !== otp.trim()) {
+        throw new ApiError(400, "Invalid verification code. Please check and try again.");
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationOtp = null;
+    user.emailVerificationOtpExpiry = null;
+    await user.save({ validateBeforeSave: false });
+
+    const updatedUser = await User.findById(user._id).select("-password -refreshToken");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, updatedUser, "Email verified successfully!"));
+});
+
+const sendPasswordChangeOtp = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (!user.isEmailVerified) {
+        throw new ApiError(400, "You must verify your email address before changing password via OTP.");
+    }
+
+    // Generate secure 6-digit code
+    const otp = crypto.randomInt(100000, 1000000).toString();
+
+    user.passwordChangeOtp = otp;
+    user.passwordChangeOtpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    const emailSent = await sendPasswordChangeOtpEmail({
+        to: user.email,
+        name: user.fullName,
+        otp
+    });
+
+    if (!emailSent) {
+        console.log(`[Dev Mode / OTP Notice] Password Change OTP for ${user.email}: ${otp}`);
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, null, "Authorization code has been sent to your registered email address."));
+});
+
+const changePasswordWithOtp = asyncHandler(async (req, res) => {
+    const { otp, newPassword } = req.body;
+
+    if (!otp || !otp.trim()) {
+        throw new ApiError(400, "Please provide the authorization code.");
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+        throw new ApiError(400, "New password must be at least 8 characters long.");
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    if (!user.isEmailVerified) {
+        throw new ApiError(400, "Your email address must be verified to change password via OTP.");
+    }
+
+    if (!user.passwordChangeOtp || !user.passwordChangeOtpExpiry) {
+        throw new ApiError(400, "No password authorization code found. Please click resend to generate a new code.");
+    }
+
+    if (new Date() > new Date(user.passwordChangeOtpExpiry)) {
+        user.passwordChangeOtp = null;
+        user.passwordChangeOtpExpiry = null;
+        await user.save({ validateBeforeSave: false });
+        throw new ApiError(400, "Authorization code has expired. Please request a new code.");
+    }
+
+    if (user.passwordChangeOtp !== otp.trim()) {
+        throw new ApiError(400, "Invalid authorization code. Please check and try again.");
+    }
+
+    // Update password (pre-save hook hashes the new password)
+    user.password = newPassword;
+    user.passwordChangeOtp = null;
+    user.passwordChangeOtpExpiry = null;
+    await user.save({ validateBeforeSave: false });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, null, "Password changed successfully!"));
+});
+
 export {
     registerUser,
     loginUser,
@@ -390,5 +555,9 @@ export {
     getUserCart,
     addToCart,
     removeFromCart,
-    updateCartQuantity
+    updateCartQuantity,
+    sendVerificationOtp,
+    verifyEmailOtp,
+    sendPasswordChangeOtp,
+    changePasswordWithOtp
 }

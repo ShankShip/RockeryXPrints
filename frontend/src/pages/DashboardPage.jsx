@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
-import { Package, Settings, LogOut, ChevronRight, ChevronDown, User, Shield, Check, Edit2, Upload } from 'lucide-react';
+import { Package, Settings, LogOut, ChevronRight, ChevronDown, User, Shield, Check, Edit2, Upload, ShieldCheck, Lock, MapPin } from 'lucide-react';
 import { logoutThunk, setUser } from '../store/authSlice';
 import { updateDetails, changePassword, getOrders, getAllOrdersAPI, updateOrderStatusAPI, updateAvatarAPI } from '../services/api';
 import Navbar from '../components/landing/Navbar';
 import Popup from '../components/landing/Popup';
 import { SkeletonRow } from '../components/common/Skeleton';
+import EmailVerificationModal from '../components/cart/EmailVerificationModal';
+import ChangePasswordModal from '../components/profile/ChangePasswordModal';
+import { INDIAN_STATES } from '../utils/constants';
+
 
 const spring = { type: 'spring', bounce: 0, duration: 0.25 };
 
@@ -389,16 +393,12 @@ function AdminOrdersTab({ allOrders, onStatusChange, loading }) {
 
 /* ── Profile View Tab ── */
 function ProfileTab({ user, onUpdateDetails }) {
-  const [formOpen, setFormOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(null); // 'name' | 'address' | null
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+
+  // Name & Avatar state
   const [fullName, setFullName] = useState(user?.fullName || '');
-  const [email, setEmail] = useState(user?.email || '');
-
-  // Password states
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  // Avatar state
   const [avatarFile, setAvatarFile] = useState(null);
 
   // Address state
@@ -406,7 +406,6 @@ function ProfileTab({ user, onUpdateDetails }) {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zipCode, setZipCode] = useState('');
-  const [country, setCountry] = useState('INDIA');
   const [phone, setPhone] = useState('');
 
   // Staged addresses list
@@ -417,24 +416,40 @@ function ProfileTab({ user, onUpdateDetails }) {
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Reset fields on user change or form close
+  // Reset fields on user change
   useEffect(() => {
     setFullName(user?.fullName || '');
-    setEmail(user?.email || '');
     setAddressesList(user?.addresses || []);
     setEditingAddressIdx(null);
   }, [user]);
 
-  const handleRemoveAddressLocally = (indexToRemove) => {
-    setAddressesList((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  const toggleSection = (section) => {
+    setError('');
+    setSuccess('');
+    if (activeSection === section) {
+      setActiveSection(null);
+    } else {
+      setActiveSection(section);
+    }
+  };
+
+  // Address Handlers
+  const handleRemoveAddressLocally = async (indexToRemove) => {
+    const updatedList = addressesList.filter((_, idx) => idx !== indexToRemove);
+    setAddressesList(updatedList);
     if (editingAddressIdx === indexToRemove) {
       setEditingAddressIdx(null);
-      setStreet('');
-      setCity('');
-      setState('');
-      setZipCode('');
-      setPhone('');
-      setCountry('INDIA');
+      setStreet(''); setCity(''); setState(''); setZipCode(''); setPhone('');
+    }
+    try {
+      setSubmitting(true);
+      const res = await updateDetails({ fullName: user.fullName, addresses: updatedList });
+      if (res.data?.data) onUpdateDetails({ ...user, ...res.data.data });
+      setSuccess('ADDRESS REMOVED FROM PROFILE.');
+    } catch (err) {
+      setError('FAILED TO UPDATE ADDRESSES ON SERVER.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -444,66 +459,59 @@ function ProfileTab({ user, onUpdateDetails }) {
     setCity(addr.city || '');
     setState(addr.state || '');
     setZipCode(addr.zipCode || '');
-    setCountry(addr.country || 'INDIA');
     setPhone(addr.phone || '');
     setEditingAddressIdx(idx);
-  };
-
-  const handleAddAddressLocally = (e) => {
-    e.preventDefault();
     setError('');
-    if (!street || !city || !state || !zipCode) {
-      setError('ADDRESS REQUIRES STREET, CITY, STATE AND ZIPCODE.');
-      return;
-    }
-    const newAddress = { street, city, state, zipCode: Number(zipCode), country, phone };
-    
-    if (editingAddressIdx !== null) {
-      setAddressesList((prev) => {
-        const copy = [...prev];
-        copy[editingAddressIdx] = newAddress;
-        return copy;
-      });
-      setEditingAddressIdx(null);
-    } else {
-      setAddressesList((prev) => [...prev, newAddress]);
-    }
-    
-    // Reset address inputs
-    setStreet('');
-    setCity('');
-    setState('');
-    setZipCode('');
-    setPhone('');
-    setCountry('INDIA');
   };
 
-  const handleSubmitProfile = async (e) => {
+  const handleSaveAddress = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    if (!street.trim() || !city.trim() || !state || !zipCode || !phone.trim()) {
+      setError('ADDRESS REQUIRES STREET, CITY, STATE, ZIPCODE, AND PHONE NUMBER.');
+      return;
+    }
+    const newAddress = { street: street.trim(), city: city.trim(), state: state.trim(), zipCode: Number(zipCode), country: 'INDIA', phone: phone.trim() };
+    
+    let updatedList;
+    if (editingAddressIdx !== null) {
+      updatedList = [...addressesList];
+      updatedList[editingAddressIdx] = newAddress;
+    } else {
+      updatedList = [...addressesList, newAddress];
+    }
+    
+    setSubmitting(true);
+    try {
+      const res = await updateDetails({ fullName: user.fullName, addresses: updatedList });
+      if (res.data?.data) {
+        onUpdateDetails({ ...user, ...res.data.data });
+      }
+      setAddressesList(updatedList);
+      setEditingAddressIdx(null);
+      setStreet(''); setCity(''); setState(''); setZipCode(''); setPhone('');
+      setSuccess(editingAddressIdx !== null ? 'ADDRESS UPDATED SUCCESSFULLY.' : 'NEW ADDRESS ADDED SUCCESSFULLY.');
+    } catch (err) {
+      setError(err?.response?.data?.message || 'FAILED TO SAVE ADDRESS.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    // Validate passwords if filled
-    if (oldPassword || newPassword || confirmPassword) {
-      if (!oldPassword || !newPassword || !confirmPassword) {
-        setError('ALL KEY/PASSWORD FIELDS MUST BE FILLED.');
-        return;
-      }
-      if (newPassword.length < 8) {
-        setError('NEW PASSWORD MUST BE AT LEAST 8 CHARACTERS.');
-        return;
-      }
-      if (newPassword !== confirmPassword) {
-        setError('CONFIRMATION KEY/PASSWORD DOES NOT MATCH.');
-        return;
-      }
+  // Name & Avatar Handlers
+  const handleSaveName = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (!fullName.trim()) {
+      setError('FULL NAME CANNOT BE EMPTY.');
+      return;
     }
 
     setSubmitting(true);
     let updatedUser = { ...user };
-
     try {
-      // 1. Update Avatar
       if (avatarFile) {
         const avatarData = new FormData();
         avatarData.append('avatar', avatarFile);
@@ -512,33 +520,18 @@ function ProfileTab({ user, onUpdateDetails }) {
           updatedUser = { ...updatedUser, ...avatarRes.data.data };
         }
       }
-
-      // 2. Update Password
-      if (oldPassword && newPassword) {
-        await changePassword({ oldPassword, newPassword });
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
+      if (fullName.trim() !== user.fullName) {
+        const detailsRes = await updateDetails({ fullName: fullName.trim(), addresses: user.addresses });
+        if (detailsRes.data?.data) {
+          updatedUser = { ...updatedUser, ...detailsRes.data.data };
+        }
       }
-
-      // 3. Update Details & Addresses (directly set the complete staged array)
-      const detailsRes = await updateDetails({
-        fullName,
-        email,
-        addresses: addressesList
-      });
-
-      if (detailsRes.data?.data) {
-        updatedUser = { ...updatedUser, ...detailsRes.data.data };
-      }
-
-      // Dispatch and update
       onUpdateDetails(updatedUser);
-      setSuccess('PROFILE UPDATED SUCCESSFULLY.');
-      setFormOpen(false);
+      setSuccess('PROFILE DETAILS UPDATED SUCCESSFULLY.');
+      setActiveSection(null);
       setAvatarFile(null);
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'FAILED TO SAVE PROFILE CHANGES.');
+      setError(err?.response?.data?.message || 'FAILED TO UPDATE PROFILE DETAILS.');
     } finally {
       setSubmitting(false);
     }
@@ -553,24 +546,80 @@ function ProfileTab({ user, onUpdateDetails }) {
             USER<br />PROFILE
           </h2>
           <p className="font-space text-[10px] md:text-xs text-neutral-500 uppercase tracking-widest mt-1">
-            ACCOUNT DETAILS
+            ACCOUNT DETAILS & SECURITY
           </p>
         </div>
 
-        {/* Change Options - Top Right (Single unified Edit button) */}
-        <div className="flex flex-wrap gap-2 md:self-start justify-start md:justify-end">
+        {/* Change Options - Top Right (Three separate buttons & Verify Email) */}
+        <div className="flex flex-wrap items-center gap-2.5 md:self-start justify-start md:justify-end">
+          {!user?.isEmailVerified && (
+            <button
+              onClick={() => setShowVerifyModal(true)}
+              className="bg-black text-white border-2 border-black px-3.5 py-2 font-space font-bold text-xs uppercase tracking-wider hover:bg-white hover:text-black transition-colors touch-manipulation cursor-pointer flex items-center gap-1.5 shadow-[2px_2px_0px_0px_#000000]"
+            >
+              <ShieldCheck size={15} className="text-emerald-400 shrink-0" />
+              [ VERIFY EMAIL ]
+            </button>
+          )}
+
           <button
-            onClick={() => { setFormOpen(!formOpen); setError(''); setSuccess(''); }}
-            className={`border-2 border-black px-4 py-2 font-space font-bold text-xs uppercase tracking-wider transition-colors touch-manipulation cursor-pointer ${formOpen ? 'bg-black text-white' : 'bg-white hover:bg-neutral-100'}`}
+            onClick={() => toggleSection('name')}
+            className={`border-2 border-black px-3.5 py-2 font-space font-bold text-xs uppercase tracking-wider transition-colors touch-manipulation cursor-pointer shadow-[2px_2px_0px_0px_#000000] ${
+              activeSection === 'name' ? 'bg-black text-white' : 'bg-white hover:bg-neutral-100 text-black'
+            }`}
           >
-            {formOpen ? '[ CANCEL EDIT ]' : '[ EDIT PROFILE ]'}
+            {activeSection === 'name' ? '[ CANCEL NAME ]' : 'CHANGE NAME'}
           </button>
+
+          <button
+            onClick={() => toggleSection('address')}
+            className={`border-2 border-black px-3.5 py-2 font-space font-bold text-xs uppercase tracking-wider transition-colors touch-manipulation cursor-pointer shadow-[2px_2px_0px_0px_#000000] ${
+              activeSection === 'address' ? 'bg-black text-white' : 'bg-white hover:bg-neutral-100 text-black'
+            }`}
+          >
+            {activeSection === 'address' ? '[ CLOSE ADDRESSES ]' : 'EDIT/ADD ADDRESS'}
+          </button>
+
+          <div className="relative group inline-flex">
+            <button
+              type="button"
+              aria-disabled={!user?.isEmailVerified}
+              onClick={() => {
+                if (user?.isEmailVerified) {
+                  setShowPasswordModal(true);
+                  setActiveSection(null);
+                  setError('');
+                  setSuccess('');
+                } else {
+                  setShowVerifyModal(true);
+                }
+              }}
+              className={`border-2 px-3.5 py-2 font-space font-bold text-xs uppercase tracking-wider transition-all duration-150 touch-manipulation flex items-center gap-1.5 ${
+                user?.isEmailVerified
+                  ? 'border-black bg-white hover:bg-neutral-100 text-black cursor-pointer shadow-[2px_2px_0px_0px_#000000]'
+                  : 'border-neutral-400 bg-neutral-200 text-neutral-500 cursor-not-allowed group-hover:bg-red-600 group-hover:text-white group-hover:border-black group-hover:shadow-[2px_2px_0px_0px_#000000]'
+              }`}
+            >
+              {!user?.isEmailVerified && (
+                <Lock size={13} className="shrink-0 transition-colors text-neutral-500 group-hover:text-white animate-pulse" />
+              )}
+              CHANGE PASSWORD
+            </button>
+
+            {/* Brutalist Hover Tooltip when unverified */}
+            {!user?.isEmailVerified && (
+              <div className="absolute right-0 top-full mt-2.5 z-50 opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none whitespace-nowrap bg-black text-white border-2 border-red-500 text-[10px] font-space font-bold uppercase px-3 py-2 shadow-[4px_4px_0px_0px_#ef4444] flex items-center gap-2">
+                <span className="bg-red-600 text-white px-1.5 py-0.5 text-[9px] font-black">LOCKED</span>
+                <span>VERIFY EMAIL TO UNLOCK KEY RESET (CLICK TO VERIFY)</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Notifications */}
       {error && (
-        <div className="border-2 border-black bg-black text-white font-space text-[10px] md:text-xs font-bold uppercase px-4 py-3 mb-6">
+        <div className="border-2 border-black bg-black text-white font-space text-[10px] md:text-xs font-bold uppercase px-4 py-3 mb-6 flex items-center gap-2">
           ⚠ {error}
         </div>
       )}
@@ -580,10 +629,71 @@ function ProfileTab({ user, onUpdateDetails }) {
         </div>
       )}
 
-      {/* Unified Edit Form Panel (Admin Style Slide Down) */}
-      <AnimatePresence>
-        {formOpen && (
+      {/* Decoupled Action Panels */}
+      <AnimatePresence mode="wait">
+        {activeSection === 'name' && (
           <motion.div
+            key="name-panel"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={spring}
+            className="border-4 border-black p-5 md:p-8 mb-8 bg-neutral-50 overflow-hidden font-space"
+          >
+            <form onSubmit={handleSaveName} className="flex flex-col gap-6 max-w-xl mx-auto">
+              <div className="border-b-2 border-black pb-2">
+                <h3 className="font-space font-black text-sm uppercase tracking-wider text-black">
+                  🛠 UPDATE NAME & AVATAR PROFILE
+                </h3>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-black">REGISTERED FULL NAME</label>
+                <input
+                  type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
+                  style={{ fontSize: '16px' }} className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-black">AVATAR IMAGE FILE</label>
+                <div className="relative border-2 border-dashed border-black bg-white p-5 flex flex-col items-center justify-center text-center">
+                  <input
+                    type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files[0])}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <Upload size={20} className="text-neutral-400 mb-1.5" />
+                  {avatarFile ? (
+                    <span className="text-[10px] font-bold text-black uppercase">{avatarFile.name} SELECTED</span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase">CLICK OR DRAG TO SELECT NEW PROFILE IMAGE</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-black text-white font-space font-bold uppercase text-xs py-4 border-2 border-black shadow-[4px_4px_0px_0px_#000000] hover:bg-white hover:text-black transition-colors touch-manipulation cursor-pointer disabled:opacity-50"
+                >
+                  {submitting ? 'SAVING CHANGES...' : 'SAVE NAME DETAILS'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection(null)}
+                  className="bg-white hover:bg-neutral-100 text-black border-2 border-black px-6 py-4 text-xs font-bold uppercase transition-colors cursor-pointer"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+
+        {activeSection === 'address' && (
+          <motion.div
+            key="address-panel"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -591,199 +701,147 @@ function ProfileTab({ user, onUpdateDetails }) {
             className="border-4 border-black p-5 md:p-8 mb-8 bg-neutral-50 overflow-hidden font-space"
           >
             <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-              <div className="border-b-2 border-black pb-2">
+              <div className="border-b-2 border-black pb-2 flex items-center justify-between">
                 <h3 className="font-space font-black text-sm uppercase tracking-wider text-black">
-                  🛠 UPDATE SYSTEM REGISTRATION PROFILE
+                  🛠 MANAGE INDIA SHIPPING COORDINATES ({addressesList.length})
                 </h3>
               </div>
 
-              {/* Basic Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-black">REGISTERED FULL NAME</label>
-                  <input
-                    type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
-                    style={{ fontSize: '16px' }} className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs focus:outline-none"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-black">EMAIL COORDINATE</label>
-                  <input
-                    type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                    style={{ fontSize: '16px' }} className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Avatar Image Selector */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-black">AVATAR IMAGE FILE</label>
-                <div className="relative border-2 border-dashed border-black bg-white p-4 flex flex-col items-center justify-center text-center">
-                  <input
-                    type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files[0])}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <Upload size={16} className="text-neutral-400 mb-1" />
-                  {avatarFile ? (
-                    <span className="text-[10px] font-bold text-black uppercase">{avatarFile.name} SELECTED</span>
-                  ) : (
-                    <span className="text-[10px] text-neutral-400 uppercase">DRAG OR SELECT NEW PROFILE IMAGE</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Password change section */}
-              <div className="border-t border-dashed border-neutral-300 pt-4">
-                <span className="text-[10px] font-black uppercase text-neutral-400 block mb-3">CHANGE ACCESS KEY/PASSWORD (OPTIONAL)</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-[9px] font-bold uppercase block mb-1">CURRENT KEY</label>
-                    <input
-                      type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)}
-                      style={{ fontSize: '16px' }} className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-bold uppercase block mb-1">NEW KEY</label>
-                    <input
-                      type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                      style={{ fontSize: '16px' }} className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-bold uppercase block mb-1">CONFIRM NEW KEY</label>
-                    <input
-                      type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                      style={{ fontSize: '16px' }} className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Staged Addresses list */}
-              <div className="border-t border-dashed border-neutral-300 pt-4">
-                <span className="text-[10px] font-black uppercase text-neutral-400 block mb-3">MANAGE SHIPMENT COORDINATES ({addressesList.length})</span>
-                {addressesList.length > 0 ? (
-                  <div className="space-y-2 mb-4">
-                    {addressesList.map((addr, idx) => (
-                      <div key={idx} className={`border-2 p-3 text-[10px] md:text-xs uppercase flex justify-between items-center gap-4 transition-colors ${editingAddressIdx === idx ? 'border-dashed border-neutral-500 bg-neutral-100' : 'border-black bg-white'}`}>
-                        <div>
-                          <span className="font-bold text-neutral-500 block">COORDINATE #{idx + 1} {editingAddressIdx === idx && '(EDITING)'}</span>
-                          {addr.street}, {addr.city}, {addr.state} — {addr.zipCode} ({addr.country})
-                        </div>
-                        <div className="flex gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleEditAddressLocally(idx)}
-                            className="bg-white hover:bg-neutral-100 text-black border-2 border-black px-2.5 py-1 text-[9px] font-bold uppercase transition-colors cursor-pointer"
-                          >
-                            [ EDIT ]
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAddressLocally(idx)}
-                            className="bg-black text-white hover:bg-white hover:text-black border-2 border-black px-2.5 py-1 text-[9px] font-bold uppercase transition-colors cursor-pointer"
-                          >
-                            [ REMOVE ]
-                          </button>
-                        </div>
+              {addressesList.length > 0 ? (
+                <div className="space-y-3">
+                  {addressesList.map((addr, idx) => (
+                    <div key={idx} className={`border-2 p-3.5 text-[10px] md:text-xs uppercase flex justify-between items-center gap-4 transition-colors ${editingAddressIdx === idx ? 'border-dashed border-neutral-500 bg-neutral-100' : 'border-black bg-white'}`}>
+                      <div>
+                        <span className="font-bold text-neutral-500 block mb-1">COORDINATE #{idx + 1} {editingAddressIdx === idx && '(EDITING)'}</span>
+                        <span className="font-black text-black block">{addr.street}, {addr.city}</span>
+                        <span className="text-neutral-700">{addr.state} — {addr.zipCode} ({addr.country})</span>
+                        <span className="block text-neutral-600 font-bold mt-1">PHONE: {addr.phone || 'REQUIRED'}</span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed border-neutral-300 p-4 text-center text-neutral-400 text-xs uppercase mb-4">
-                    NO STAGED COORDINATES. USE FORM BELOW TO ADD.
-                  </div>
-                )}
-              </div>
+                      <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleEditAddressLocally(idx)}
+                          className="bg-white hover:bg-neutral-100 text-black border-2 border-black px-3 py-1.5 text-[9px] font-bold uppercase transition-colors cursor-pointer shadow-[2px_2px_0px_0px_#000000]"
+                        >
+                          [ EDIT ]
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAddressLocally(idx)}
+                          disabled={submitting}
+                          className="bg-black text-white hover:bg-white hover:text-black border-2 border-black px-3 py-1.5 text-[9px] font-bold uppercase transition-colors cursor-pointer shadow-[2px_2px_0px_0px_#000000] disabled:opacity-50"
+                        >
+                          [ REMOVE ]
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-neutral-300 p-6 text-center text-neutral-400 text-xs uppercase">
+                  NO SAVED ADDRESSES. USE THE FORM BELOW TO ADD AN INDIAN SHIPPING COORDINATE.
+                </div>
+              )}
 
-              {/* Add Address section */}
-              <div className="border-t border-dashed border-neutral-300 pt-4">
-                <span className="text-[10px] font-black uppercase text-neutral-400 block mb-3">
-                  {editingAddressIdx !== null ? `🛠 EDIT SHIPMENT COORDINATE (POSITION #${editingAddressIdx + 1})` : 'ADD NEW SHIPMENT COORDINATE'}
+              {/* Add / Edit Address form */}
+              <form onSubmit={handleSaveAddress} className="border-t-2 border-dashed border-neutral-300 pt-6 mt-2">
+                <span className="text-xs font-black uppercase text-black block mb-4">
+                  {editingAddressIdx !== null ? `🛠 EDITING SHIPMENT COORDINATE (POSITION #${editingAddressIdx + 1})` : '+ ADD NEW INDIA SHIPPING ADDRESS'}
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold uppercase">STREET ADDRESS</label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                  <div className="flex flex-col gap-1 sm:col-span-2">
+                    <label className="text-[10px] font-bold uppercase">STREET ADDRESS *</label>
                     <input
-                      type="text" value={street} onChange={(e) => setStreet(e.target.value)}
-                      placeholder="12/B BRUTALIST AVENUE" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
+                      type="text" required value={street} onChange={(e) => setStreet(e.target.value)}
+                      placeholder="12/B BRUTALIST AVENUE, APARTMENT / SUITE" style={{ fontSize: '16px' }}
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none"
                     />
                   </div>
+                  
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold uppercase">CITY</label>
+                    <label className="text-[10px] font-bold uppercase">CITY *</label>
                     <input
-                      type="text" value={city} onChange={(e) => setCity(e.target.value)}
-                      placeholder="NEW DELHI" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
+                      type="text" required value={city} onChange={(e) => setCity(e.target.value)}
+                      placeholder="NEW DELHI / MUMBAI / BANGALORE" style={{ fontSize: '16px' }}
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none"
                     />
                   </div>
+                  
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold uppercase">STATE</label>
+                    <label className="text-[10px] font-bold uppercase">STATE / UNION TERRITORY *</label>
+                    <select
+                      required
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      style={{ fontSize: '16px' }}
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none cursor-pointer"
+                    >
+                      <option value="">-- SELECT STATE IN INDIA --</option>
+                      {INDIAN_STATES.map((st) => (
+                        <option key={st} value={st}>{st.toUpperCase()}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase">ZIP / PIN CODE *</label>
                     <input
-                      type="text" value={state} onChange={(e) => setState(e.target.value)}
-                      placeholder="DELHI" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
+                      type="text" required value={zipCode} onChange={(e) => setZipCode(e.target.value)}
+                      placeholder="110001" maxLength="6" style={{ fontSize: '16px' }}
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none font-mono"
                     />
                   </div>
+                  
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold uppercase">ZIP/POSTAL CODE</label>
+                    <label className="text-[10px] font-bold uppercase">PHONE NUMBER * (REQUIRED)</label>
                     <input
-                      type="number" value={zipCode} onChange={(e) => setZipCode(e.target.value)}
-                      placeholder="110001" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold uppercase">PHONE NUMBER</label>
-                    <input
-                      type="text" value={phone} onChange={(e) => setPhone(e.target.value)}
+                      type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91 9876543210" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none font-mono"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold uppercase">COUNTRY</label>
+                  
+                  <div className="flex flex-col gap-1 sm:col-span-2">
+                    <label className="text-[10px] font-bold uppercase text-neutral-500">COUNTRY (NON-CHANGEABLE)</label>
                     <input
-                      type="text" value={country} onChange={(e) => setCountry(e.target.value)}
-                      placeholder="INDIA" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2 text-xs focus:outline-none"
+                      type="text" value="INDIA" disabled
+                      style={{ fontSize: '16px' }}
+                      className="w-full bg-neutral-200 text-neutral-600 font-black border-2 border-neutral-400 px-3 py-2.5 text-xs cursor-not-allowed select-none"
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
+
+                <div className="flex flex-wrap gap-3">
                   <button
-                    type="button"
-                    onClick={handleAddAddressLocally}
-                    className="flex-1 bg-white hover:bg-neutral-100 text-black font-space font-bold uppercase text-[10px] py-3.5 border-2 border-black transition-colors touch-manipulation cursor-pointer"
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 bg-black text-white hover:bg-white hover:text-black font-space font-bold uppercase text-xs py-4 border-2 border-black shadow-[4px_4px_0px_0px_#000000] transition-colors touch-manipulation cursor-pointer disabled:opacity-50"
                   >
-                    {editingAddressIdx !== null ? '[ SAVE ADDRESS CHANGES ]' : '+ STAGE & ADD ADDRESS TO PROFILE'}
+                    {submitting ? 'SAVING...' : editingAddressIdx !== null ? '[ SAVE ADDRESS CHANGES ]' : '+ ADD & SAVE ADDRESS'}
                   </button>
                   {editingAddressIdx !== null && (
                     <button
                       type="button"
                       onClick={() => {
                         setEditingAddressIdx(null);
-                        setStreet(''); setCity(''); setState(''); setZipCode(''); setPhone(''); setCountry('INDIA');
+                        setStreet(''); setCity(''); setState(''); setZipCode(''); setPhone('');
                       }}
-                      className="bg-black text-white hover:bg-white hover:text-black border-2 border-black px-4 py-3.5 text-[10px] font-bold uppercase transition-colors cursor-pointer"
+                      className="bg-white hover:bg-neutral-100 text-black border-2 border-black px-6 py-4 text-xs font-bold uppercase transition-colors cursor-pointer"
                     >
-                      [ CANCEL ]
+                      CANCEL EDIT
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection(null)}
+                    className="bg-white hover:bg-neutral-100 text-black border-2 border-black px-6 py-4 text-xs font-bold uppercase transition-colors cursor-pointer"
+                  >
+                    CLOSE
+                  </button>
                 </div>
-              </div>
-
-              {/* Main Submit Button */}
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={handleSubmitProfile}
-                className="w-full bg-black text-white font-space font-bold uppercase text-xs py-4 border-2 border-black hover:bg-white hover:text-black transition-colors touch-manipulation mt-4 cursor-pointer"
-              >
-                {submitting ? 'SAVING CHANGES...' : 'SAVE PROFILE DETAILS'}
-              </button>
+              </form>
             </div>
           </motion.div>
         )}
@@ -805,7 +863,7 @@ function ProfileTab({ user, onUpdateDetails }) {
             )}
           </div>
           {/* Label underneath */}
-          <span className="border-black text-white bg-black border-2 font-inter text-[9px] font-black uppercase select-none text-center">
+          <span className="border-black text-white bg-black border-2 font-inter text-[9px] font-black uppercase select-none text-center w-full block py-0.5">
             {user?.role?.toUpperCase() || 'USER'}
           </span>
         </div>
@@ -819,30 +877,62 @@ function ProfileTab({ user, onUpdateDetails }) {
             </div>
             <div>
               <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">EMAIL ADDRESS</span>
-              <span className="text-sm font-bold uppercase text-black break-all">{user?.email || 'user@domain.com'}</span>
+              <span className="text-sm font-mono tracking-normal text-black break-all block">{user?.email || 'user@domain.com'}</span>
+              {user?.isEmailVerified ? (
+                <div className="inline-flex items-center gap-2 mt-2 bg-emerald-100 text-emerald-900 border border-emerald-800 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                  ✓ VERIFIED ACCOUNT
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="bg-amber-100 text-amber-900 border border-amber-900 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                    ⚠ UNVERIFIED
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Addresses */}
           <div>
-            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-2">SAVED SHIPPING ADDRESSES</span>
+            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mb-2">SAVED SHIPPING ADDRESSES (INDIA ONLY)</span>
             {user?.addresses && user.addresses.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {user.addresses.map((addr, index) => (
-                  <div key={index} className="border-2 border-black p-3 bg-neutral-50 text-[10px] md:text-xs uppercase leading-relaxed font-space">
-                    {addr.street}, {addr.city}, {addr.state} — {addr.zipCode}<br />
-                    {addr.country} {addr.phone && `· PHONE: ${addr.phone}`}
+                  <div key={index} className="border-2 border-black p-3.5 bg-neutral-50 text-[10px] md:text-xs uppercase leading-relaxed font-space flex justify-between items-center gap-3">
+                    <div>
+                      <span className="font-black text-black block text-xs">{addr.street}, {addr.city}</span>
+                      <span className="text-neutral-700 font-bold">{addr.state} — {addr.zipCode} ({addr.country || 'INDIA'})</span>
+                      {addr.phone && <span className="block font-black text-black mt-0.5">PHONE: {addr.phone}</span>}
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="border-2 border-dashed border-neutral-300 p-4 text-center text-neutral-400 text-xs uppercase">
-                NO SAVED ADDRESSES FOUND
+              <div className="border-2 border-dashed border-neutral-300 p-5 text-center text-neutral-400 text-xs uppercase">
+                NO SAVED ADDRESSES FOUND. CLICK 'EDIT/ADD ADDRESS' ABOVE TO ADD ONE.
               </div>
             )}
           </div>
         </div>
       </div>
+
+      <EmailVerificationModal
+        isOpen={showVerifyModal}
+        onClose={() => setShowVerifyModal(false)}
+        onSuccess={() => {
+          setShowVerifyModal(false);
+          setSuccess('EMAIL ADDRESS VERIFIED SUCCESSFULLY. YOU MAY NOW CHANGE PASSWORD IF NEEDED.');
+        }}
+      />
+
+      <ChangePasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSuccess={() => {
+          setShowPasswordModal(false);
+          setSuccess('PASSWORD CHANGED SUCCESSFULLY.');
+        }}
+      />
     </div>
   );
 }

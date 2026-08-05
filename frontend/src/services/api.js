@@ -50,6 +50,10 @@ export const getCurrentUser = () => api.get('/users/current-user');
 export const updateDetails = (data) => api.post('/users/update-details', data);
 export const changePassword = (data) => api.post('/users/change-password', data);
 export const updateAvatarAPI = (data) => api.post('/users/update-avatar', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+export const sendVerificationOtpAPI = () => api.post('/users/send-verification-otp');
+export const verifyEmailOtpAPI = (otp) => api.post('/users/verify-otp', { otp });
+export const sendPasswordChangeOtpAPI = () => api.post('/users/send-password-change-otp');
+export const changePasswordWithOtpAPI = (otp, newPassword) => api.post('/users/change-password-with-otp', { otp, newPassword });
 
 // ─── Cart ──────────────────────────────────────────────────────────────────
 export const getUserCart = () => api.get('/users/cart');

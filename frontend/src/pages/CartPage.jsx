@@ -8,6 +8,8 @@ import { removeFromCart, clearCart, updateQuantity } from '../store/cartSlice';
 import { createOrder } from '../services/api';
 
 import Navbar from '../components/landing/Navbar';
+import EmailVerificationModal from '../components/cart/EmailVerificationModal';
+import { INDIAN_STATES } from '../utils/constants';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 
@@ -91,6 +93,7 @@ export default function CartPage() {
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   // Pre-fill address if user has saved addresses
   useEffect(() => {
@@ -121,6 +124,8 @@ export default function CartPage() {
   const handleProceedToShipping = () => {
     if (!user) {
       navigate('/auth?redirect=/cart');
+    } else if (!user.isEmailVerified) {
+      setShowVerificationModal(true);
     } else {
       setStep(1);
     }
@@ -131,6 +136,10 @@ export default function CartPage() {
       navigate('/auth?redirect=/cart');
       return;
     }
+    if (!user.isEmailVerified) {
+      setShowVerificationModal(true);
+      return;
+    }
     setSubmittingOrder(true);
     setOrderError('');
     createOrder({
@@ -139,7 +148,7 @@ export default function CartPage() {
         city: address.city,
         state: address.state,
         zipCode: Number(address.zipCode),
-        country: address.country,
+        country: 'INDIA',
         phone: address.phone
       },
       paymentMethod
@@ -153,7 +162,11 @@ export default function CartPage() {
       }
     })
     .catch((err) => {
-      setOrderError(err.response?.data?.message || 'FAILED TO PLACE ORDER. PLEASE TRY AGAIN.');
+      if (err.response?.status === 403 && err.response?.data?.errors === "EMAIL_NOT_VERIFIED") {
+        setShowVerificationModal(true);
+      } else {
+        setOrderError(err.response?.data?.message || 'FAILED TO PLACE ORDER. PLEASE TRY AGAIN.');
+      }
     })
     .finally(() => {
       setSubmittingOrder(false);
@@ -409,13 +422,42 @@ export default function CartPage() {
 
                       {/* Two-col on md+ */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <Field label="CITY" id="city" value={address.city} onChange={setAddr('city')} required placeholder="NEW DELHI" />
-                        <Field label="STATE" id="state" value={address.state} onChange={setAddr('state')} required placeholder="DELHI" />
-                        <Field label="ZIP / POSTAL CODE" id="zip" value={address.zipCode} onChange={setAddr('zipCode')} required placeholder="110001" />
-                        <Field label="COUNTRY" id="country" value={address.country} onChange={setAddr('country')} required placeholder="INDIA" />
+                        <Field label="CITY *" id="city" value={address.city} onChange={setAddr('city')} required placeholder="NEW DELHI / MUMBAI" />
+                        <div>
+                          <label htmlFor="state" className="font-space text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] text-black block mb-1">
+                            STATE / UNION TERRITORY *
+                          </label>
+                          <select
+                            id="state"
+                            value={address.state}
+                            onChange={setAddr('state')}
+                            required
+                            style={{ fontSize: '16px' }}
+                            className="w-full bg-white border-2 border-black p-3 font-space text-xs font-bold uppercase focus:outline-none cursor-pointer"
+                          >
+                            <option value="">-- SELECT STATE IN INDIA --</option>
+                            {INDIAN_STATES.map((st) => (
+                              <option key={st} value={st}>{st.toUpperCase()}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <Field label="ZIP / POSTAL CODE *" id="zip" value={address.zipCode} onChange={setAddr('zipCode')} required placeholder="110001" />
+                        <div>
+                          <label htmlFor="country" className="font-space text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] text-neutral-500 block mb-1">
+                            COUNTRY (NON-CHANGEABLE)
+                          </label>
+                          <input
+                            id="country"
+                            type="text"
+                            value="INDIA"
+                            disabled
+                            style={{ fontSize: '16px' }}
+                            className="w-full bg-neutral-200 text-neutral-600 border-2 border-neutral-400 p-3 font-space text-xs font-bold cursor-not-allowed select-none"
+                          />
+                        </div>
                       </div>
 
-                      <Field label="PHONE NUMBER" id="phone" type="tel" value={address.phone} onChange={setAddr('phone')} required placeholder="+91 98765 43210" />
+                      <Field label="PHONE NUMBER (REQUIRED) *" id="phone" type="tel" value={address.phone} onChange={setAddr('phone')} required placeholder="+91 98765 43210" />
                     </motion.div>
                   )}
 
@@ -542,6 +584,16 @@ export default function CartPage() {
 
       {/* Mobile sticky summary */}
       <MobileOrderSummary subtotal={subtotal} mrpTotal={mrpTotal} tax={tax} shippingFee={shippingFee} finalTotal={finalTotal} />
+
+      {/* Inline Email Verification Modal */}
+      <EmailVerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onSuccess={() => {
+          setShowVerificationModal(false);
+          if (step === 0) setStep(1);
+        }}
+      />
     </div>
   );
 }

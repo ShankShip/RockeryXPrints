@@ -6,8 +6,13 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import crypto from "crypto";
+import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../utils/email.service.js";
 
 const createOrder = asyncHandler(async (req, res) => {
+    if (!req.user.isEmailVerified) {
+        throw new ApiError(403, "Please verify your email address before placing an order.", [], "EMAIL_NOT_VERIFIED");
+    }
+
     const { shippingAddress, paymentMethod } = req.body;
 
     if (!shippingAddress || !shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.zipCode || !shippingAddress.country || !shippingAddress.phone) {
@@ -85,6 +90,11 @@ const createOrder = asyncHandler(async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
+        // Asynchronously dispatch order confirmation receipt email
+        sendOrderConfirmationEmail({ order, user: req.user }).catch(err => {
+            console.error(`[Email Service] Failed to send initial order confirmation email for #${order.orderId}:`, err);
+        });
+
         return res
             .status(201)
             .json(new ApiResponse(201, order, "Order created successfully."));
@@ -134,7 +144,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate("user", "fullName email");
 
     if (!order) {
         throw new ApiError(404, "Order not found");
@@ -182,6 +192,12 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     }
 
     await order.save({ validateBeforeSave: false });
+
+    if (order.user && order.user.email) {
+        sendOrderStatusEmail({ order, user: order.user, newStatus: status }).catch(err => {
+            console.error(`[Email Service] Error sending order status update email for Order #${order.orderId}:`, err);
+        });
+    }
 
     return res
         .status(200)

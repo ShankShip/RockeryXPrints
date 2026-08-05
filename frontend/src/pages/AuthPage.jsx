@@ -7,6 +7,7 @@ import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { setUser } from '../store/authSlice';
 import { setCart } from '../store/cartSlice';
 import { loginUser, registerUser, getUserCart } from '../services/api';
+import Logo1 from '../assets/Logo1.png';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 
@@ -105,9 +106,11 @@ export default function AuthPage() {
       {/* Brand back-link */}
       <Link
         to="/"
-        className="font-inter font-black text-base md:text-xl tracking-tighter uppercase mb-8 md:mb-12 hover:text-neutral-500 transition-colors duration-75 self-start max-w-md w-full"
+        className="font-inter font-black text-base md:text-xl tracking-tighter uppercase mb-8 md:mb-12 hover:opacity-75 transition-opacity duration-75 self-start max-w-md w-full flex items-center gap-3"
       >
-        ← ROCKERYXPRINTS
+        <span>← </span>
+        <img src={Logo1} alt="RockeryXPrints Logo" className="w-7 h-7 object-contain" />
+        <span>ROCKERYXPRINTS</span>
       </Link>
 
       {/* Auth card — full-width on mobile, constrained on desktop */}

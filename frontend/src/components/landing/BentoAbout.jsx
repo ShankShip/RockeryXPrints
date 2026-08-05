@@ -5,6 +5,7 @@
 // - Large quote cell, stat cells, textured accent cell
 import { useRef, useEffect, useState } from 'react';
 import { motion, useScroll, useTransform, useInView, useSpring, useMotionValue } from 'framer-motion';
+import Logo3 from '../../assets/Logo3.png';
 
 // ── Animated counter ──────────────────────────────────────────────────────────
 function Counter({ to, suffix = '', duration = 1.8 }) {
@@ -117,8 +118,9 @@ export default function BentoAbout() {
               We make<br />
               <span className="italic font-black">statements."</span>
             </blockquote>
-            <p className="font-space text-xs text-neutral-400 mt-6 uppercase tracking-widest">
-              — RockeryXPrints Studio, 2026
+            <p className="font-space text-xs text-neutral-400 mt-6 uppercase tracking-widest flex items-center gap-2">
+              <img src={Logo3} alt="Logo" className="w-4 h-4 object-contain inline-block" />
+              <span>— RockeryXPrints Studio, 2026</span>
             </p>
           </div>
         </motion.div>

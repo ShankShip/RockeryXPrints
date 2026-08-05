@@ -2,6 +2,7 @@
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
+import Logo3 from '../assets/Logo3.png';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.4 };
 
@@ -19,8 +20,10 @@ export default function NotFoundPage() {
       />
 
       {/* Brand */}
-      <Link to="/" className="absolute top-8 left-8 font-inter font-black text-sm uppercase tracking-tighter text-white hover:text-neutral-400 transition-colors duration-75 flex items-center gap-2">
-        <ArrowLeft size={14} /> ROCKERYXPRINTS
+      <Link to="/" className="absolute top-8 left-8 font-inter font-black text-sm uppercase tracking-tighter text-white hover:opacity-75 transition-opacity duration-75 flex items-center gap-2">
+        <ArrowLeft size={14} />
+        <img src={Logo3} alt="RockeryXPrints Logo" className="w-5 h-5 object-contain" />
+        <span>ROCKERYXPRINTS</span>
       </Link>
 
       {/* 404 giant text */}

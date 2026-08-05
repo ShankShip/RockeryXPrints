@@ -8,6 +8,7 @@ import { logoutThunk } from '../../store/authSlice';
 import { getProducts } from '../../services/api';
 import { applyDeepSearch } from '../../utils/searchUtils';
 import ProductCard from '../common/ProductCard';
+import Logo1 from '../../assets/Logo1.png';
 
 const spring = { type: 'spring', stiffness: 300, damping: 25 };
 
@@ -96,9 +97,11 @@ export default function Navbar() {
 
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-3 shrink-0 group">
-          <motion.div
-            className="w-4 h-4 bg-black border border-white cursor-pointer"
-            whileHover={{ rotate: 45, scale: 1.2 }}
+          <motion.img
+            src={Logo1}
+            alt="RockeryXPrints Logo"
+            className="w-8 h-8 object-contain cursor-pointer"
+            whileHover={{ rotate: 12, scale: 1.15 }}
             transition={{ type: 'spring', stiffness: 500, damping: 15 }}
           />
           <span className="font-inter font-black text-xl md:text-2xl tracking-tighter uppercase group-hover:opacity-75 transition-opacity duration-100">

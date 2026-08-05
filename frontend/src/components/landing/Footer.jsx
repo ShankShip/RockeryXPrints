@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 
 export default function Footer() {
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e) => {
@@ -16,17 +16,17 @@ export default function Footer() {
   };
 
   const links = [
-    { name: 'Shop Inventory',       href: '/shop' },
-    { name: 'Browse Collections',   href: '/categories' },
-    { name: 'Custom Commissions',   href: '#' },
-    { name: 'Return Policy',        href: '#' },
-    { name: 'Shipping Info',        href: '#' },
+    { name: 'Shop Inventory', href: '/shop' },
+    { name: 'Browse Collections', href: '/categories' },
+    { name: 'Custom Commissions', href: '#' },
+    { name: 'Return Policy', href: '#' },
+    { name: 'Shipping Info', href: '#' },
   ];
 
   const socials = [
     { icon: <Instagram size={18} />, label: 'Instagram', href: '#' },
-    { icon: <Twitter   size={18} />, label: 'Twitter',   href: '#' },
-    { icon: <Github    size={18} />, label: 'GitHub',    href: '#' },
+    { icon: <Twitter size={18} />, label: 'Twitter', href: '#' },
+    { icon: <Github size={18} />, label: 'GitHub', href: '#' },
   ];
 
   return (
@@ -139,11 +139,10 @@ export default function Footer() {
               whileHover={!submitted ? { x: -3, y: -3, boxShadow: '5px 5px 0px 0px #ffffff' } : {}}
               whileTap={!submitted ? { x: 1, y: 1, boxShadow: '1px 1px 0px 0px #ffffff' } : {}}
               transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-              className={`border-2 p-3 font-space font-bold text-xs uppercase w-full flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 ${
-                submitted
+              className={`border-2 p-3 font-space font-bold text-xs uppercase w-full flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 ${submitted
                   ? 'bg-white text-black border-white'
                   : 'bg-transparent text-white border-white hover:bg-white hover:text-black'
-              }`}
+                }`}
             >
               {submitted ? (
                 <>✓ SUBSCRIBED</>

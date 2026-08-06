@@ -19,6 +19,8 @@ import CategoriesPage from './pages/CategoriesPage.jsx'
 import CollectionsPage from './pages/CollectionsPage.jsx'
 import ShopPage from './pages/ShopPage.jsx'
 import CategoryDetailPage from './pages/CategoryDetailPage.jsx'
+import ReturnPolicyPage from './pages/ReturnPolicyPage.jsx'
+import TermsPage from './pages/TermsPage.jsx'
 import AuthLayout from './components/AuthLayout.jsx'
 
 const router = createBrowserRouter([
@@ -73,6 +75,22 @@ const router = createBrowserRouter([
   {
     path: '/shop',
     element: <ShopPage />,
+  },
+  {
+    path: '/return-policy',
+    element: <ReturnPolicyPage />,
+  },
+  {
+    path: '/returns',
+    element: <ReturnPolicyPage />,
+  },
+  {
+    path: '/terms-and-conditions',
+    element: <TermsPage />,
+  },
+  {
+    path: '/terms',
+    element: <TermsPage />,
   },
   {
     path: '*',

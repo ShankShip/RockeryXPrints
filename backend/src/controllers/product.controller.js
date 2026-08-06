@@ -10,20 +10,20 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const addCategory = asyncHandler(async (req, res) => {
-    const {name} = req.body
+    const { name } = req.body
 
     if (!name) {
         throw new ApiError(400, "Enter the Category name.")
     }
 
     const slug = name.toLowerCase().trim().replaceAll(' ', '-')
-    
+
     const existingCategory = await Category.findOne({ slug });
-    
+
     if (existingCategory) {
         throw new ApiError(400, "Category with this name already exists.");
     }
-    
+
     const coverImagePath = req.files?.coverImage?.[0]?.path
 
     if (!coverImagePath) {
@@ -47,18 +47,18 @@ const addCategory = asyncHandler(async (req, res) => {
     }
 
     return res
-    .status(201)
-    .json(new ApiResponse(201, category, "Category created Successfully"))
+        .status(201)
+        .json(new ApiResponse(201, category, "Category created Successfully"))
 })
 
 const getCategories = asyncHandler(async (req, res) => {
-    const filter = req.user?.role === 'admin' ? {} : {productCount: {$gt: 0}}
+    const filter = req.user?.role === 'admin' ? {} : { productCount: { $gt: 0 } };
 
-    const allCategories = await Category.find(filter).lean()
+    const allCategories = await Category.find(filter).lean();
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, allCategories.length ? allCategories : [], "Categories fetched successfully"))
+        .status(200)
+        .json(new ApiResponse(200, allCategories, "Categories fetched successfully"));
 })
 
 const deleteCategory = asyncHandler(async (req, res) => {
@@ -69,7 +69,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
     }
 
     const existingCategory = await Category.findById(categoryId);
-    
+
     if (!existingCategory) {
         throw new ApiError(404, "Category does not exist.");
     }
@@ -85,8 +85,8 @@ const deleteCategory = asyncHandler(async (req, res) => {
     await existingCategory.deleteOne()
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Category deleted successfully"))
+        .status(200)
+        .json(new ApiResponse(200, {}, "Category deleted successfully"))
 })
 
 const updateCategory = asyncHandler(async (req, res) => {
@@ -127,13 +127,13 @@ const updateCategory = asyncHandler(async (req, res) => {
     await existingCategory.save();
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, existingCategory, "Category updated successfully"));
+        .status(200)
+        .json(new ApiResponse(200, existingCategory, "Category updated successfully"));
 })
 
 const addProduct = asyncHandler(async (req, res) => {
-    const { name, description, mrp, sellingPrice, parentProduct, 
-        category, searchTags, sku, stock, deliveryDays, features} = req.body
+    const { name, description, mrp, sellingPrice, parentProduct,
+        category, searchTags, sku, stock, deliveryDays, features } = req.body
 
     if (!name || !description || !mrp || !sellingPrice || !category) {
         throw new ApiError(400, "Enter all required fields")
@@ -156,7 +156,7 @@ const addProduct = asyncHandler(async (req, res) => {
     let parsedFeatures = [];
     if (features) {
         try {
-            parsedFeatures = JSON.parse(features); 
+            parsedFeatures = JSON.parse(features);
         } catch (error) {
             throw new ApiError(400, "Invalid features format. Must be a valid JSON array.");
         }
@@ -214,13 +214,13 @@ const addProduct = asyncHandler(async (req, res) => {
     }
 
     return res
-    .status(201)
-    .json(new ApiResponse(201, product, "Product has been listed successfully"))
+        .status(201)
+        .json(new ApiResponse(201, product, "Product has been listed successfully"))
 })
 
 const updateProduct = asyncHandler(async (req, res) => {
     const { productId } = req.params;
-    
+
     const { name, description, mrp, sellingPrice, category,
         searchTags, sku, stock, deliveryDays, parentProduct, features } = req.body;
 
@@ -230,31 +230,31 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
 
     if (!product.parentProduct && product.category.toString() !== category.toString()) {
-        
+
         const newCategoryExists = await Category.findById(category);
         if (!newCategoryExists) {
             throw new ApiError(400, "Wrong category chosen.");
         }
 
-        await Category.findByIdAndUpdate(product.category, { 
-            $inc: { productCount: -1 } 
+        await Category.findByIdAndUpdate(product.category, {
+            $inc: { productCount: -1 }
         });
-        
-        await Category.findByIdAndUpdate(category, { 
-            $inc: { productCount: 1 } 
+
+        await Category.findByIdAndUpdate(category, {
+            $inc: { productCount: 1 }
         });
     }
 
     let parsedFeatures = [];
     if (features) {
         try {
-            parsedFeatures = JSON.parse(features); 
+            parsedFeatures = JSON.parse(features);
         } catch (error) {
             throw new ApiError(400, "Invalid features format. Must be a valid JSON array.");
         }
     }
 
-    let updatedImages = product.images; 
+    let updatedImages = product.images;
     let updatedHoverVideo = product.hoverVideo;
 
     const { imageManifest } = req.body;
@@ -302,7 +302,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         }
     } else {
         const newImagesPath = req.files?.images?.map(item => item?.path) || [];
-        
+
         if (newImagesPath.length > 0) {
             for (const oldImageUrl of product.images) {
                 await deleteOnCloudinary(oldImageUrl);
@@ -344,7 +344,7 @@ const updateProduct = asyncHandler(async (req, res) => {
                 description,
                 mrp: Number(mrp),
                 sellingPrice: Number(sellingPrice),
-                category, 
+                category,
                 parentProduct: parentProduct || null,
                 searchTags,
                 sku,
@@ -355,14 +355,14 @@ const updateProduct = asyncHandler(async (req, res) => {
                 features: parsedFeatures
             }
         },
-        { 
+        {
             returnDocument: 'after'
-         } 
+        }
     );
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, updatedProduct, "Product updated successfully"));
+        .status(200)
+        .json(new ApiResponse(200, updatedProduct, "Product updated successfully"));
 });
 
 const deleteProduct = asyncHandler(async (req, res) => {
@@ -403,43 +403,36 @@ const deleteProduct = asyncHandler(async (req, res) => {
     await product.deleteOne();
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Product deleted successfully"))
+        .status(200)
+        .json(new ApiResponse(200, {}, "Product deleted successfully"))
 })
 
 const getProducts = asyncHandler(async (req, res) => {
-    const { 
-        category, 
-        search, 
-        page = 1, 
-        limit = 12, 
-        sort = "newest" 
-    } = req.query; 
+    const {
+        category,
+        search,
+        page = 1,
+        limit = 12,
+        sort = "newest"
+    } = req.query;
 
     // ---------------------------------------------
     // STAGE 1: Filtering ($match)
     // ---------------------------------------------
     const matchStage = { parentProduct: null };
 
-    const isCategoryFilterActive = !!category;
-    const isCategoryObjectId = isCategoryFilterActive && mongoose.Types.ObjectId.isValid(category);
-
-    if (isCategoryObjectId) {
-        matchStage.category = new mongoose.Types.ObjectId(category);
-    }
-
     if (search) {
         matchStage.$or = [
             { name: { $regex: search, $options: "i" } },
             { description: { $regex: search, $options: "i" } },
-            { searchTags: { $regex: search, $options: "i" } } 
+            { searchTags: { $regex: search, $options: "i" } }
         ];
     }
 
     // ---------------------------------------------
     // STAGE 2: Sorting ($sort)
     // ---------------------------------------------
-    let sortStage = { createdAt: -1 }; 
+    let sortStage = { createdAt: -1 };
     if (sort === "price-low") sortStage = { sellingPrice: 1 };
     if (sort === "price-high") sortStage = { sellingPrice: -1 };
 
@@ -447,38 +440,56 @@ const getProducts = asyncHandler(async (req, res) => {
     // THE PIPELINE
     // ---------------------------------------------
     const pipeline = [
-        { 
-            $match: matchStage 
+        {
+            $match: matchStage
         },
         {
-            // $lookup is the aggregation equivalent of .populate()
             $lookup: {
-                from: "categories", // MongoDB automatically lowercases and pluralizes your "Category" model name
+                from: "categories",
                 localField: "category",
                 foreignField: "_id",
-                as: "categoryDetails" // Temporarily store the populated data here
+                as: "categoryDetails"
             }
         },
         {
-            // $lookup returns an array. $unwind pulls the object out of the array.
-            $unwind: "$categoryDetails" 
+            $unwind: {
+                path: "$categoryDetails",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $addFields: {
+                category: {
+                    $ifNull: ["$categoryDetails", "$category"]
+                }
+            }
         }
     ];
 
-    // If category filter is slug or name (not a valid ObjectId), filter post-lookup
-    if (isCategoryFilterActive && !isCategoryObjectId) {
+    // STAGE 3: Flexible Category Filter (Post-lookup matching for ObjectId, string ID, slug, or name)
+    if (category) {
+        const catConditions = [
+            { "categoryDetails.slug": category },
+            { "categoryDetails.name": { $regex: new RegExp(`^${category}$`, "i") } }
+        ];
+
+        if (mongoose.Types.ObjectId.isValid(category)) {
+            const catObjId = new mongoose.Types.ObjectId(category);
+            catConditions.push({ "categoryDetails._id": catObjId });
+            catConditions.push({ "category._id": catObjId });
+            catConditions.push({ category: catObjId });
+            catConditions.push({ category: String(category) });
+        }
+
         pipeline.push({
             $match: {
-                $or: [
-                    { "categoryDetails.slug": category },
-                    { "categoryDetails.name": { $regex: new RegExp(`^${category}$`, "i") } }
-                ]
+                $or: catConditions
             }
         });
     }
 
-    pipeline.push({ 
-        $sort: sortStage 
+    pipeline.push({
+        $sort: sortStage
     });
 
     // ---------------------------------------------
@@ -490,7 +501,7 @@ const getProducts = asyncHandler(async (req, res) => {
     };
 
     const aggregate = Product.aggregate(pipeline);
-    
+
     // The plugin runs the pipeline and handles all the math automatically!
     const result = await Product.aggregatePaginate(aggregate, options);
 
@@ -538,8 +549,8 @@ const getProductBySlug = asyncHandler(async (req, res) => {
     };
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, productData, "Product and variants fetched successfully"));
+        .status(200)
+        .json(new ApiResponse(200, productData, "Product and variants fetched successfully"));
 });
 
 const addCollection = asyncHandler(async (req, res) => {
@@ -595,8 +606,8 @@ const addCollection = asyncHandler(async (req, res) => {
     }
 
     return res
-    .status(201)
-    .json(new ApiResponse(201, collection, "Collection created Successfully"))
+        .status(201)
+        .json(new ApiResponse(201, collection, "Collection created Successfully"))
 })
 
 const getCollections = asyncHandler(async (req, res) => {
@@ -612,8 +623,8 @@ const getCollections = asyncHandler(async (req, res) => {
     );
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, collectionsWithCount, "Collections fetched successfully"))
+        .status(200)
+        .json(new ApiResponse(200, collectionsWithCount, "Collections fetched successfully"))
 })
 
 const deleteCollection = asyncHandler(async (req, res) => {
@@ -639,8 +650,8 @@ const deleteCollection = asyncHandler(async (req, res) => {
     await existingCollection.deleteOne()
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Collection deleted successfully"))
+        .status(200)
+        .json(new ApiResponse(200, {}, "Collection deleted successfully"))
 })
 
 const updateCollection = asyncHandler(async (req, res) => {
@@ -705,8 +716,8 @@ const updateCollection = asyncHandler(async (req, res) => {
     await existingCollection.save();
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, existingCollection, "Collection updated successfully"));
+        .status(200)
+        .json(new ApiResponse(200, existingCollection, "Collection updated successfully"));
 })
 
 const addOrUpdateReview = asyncHandler(async (req, res) => {

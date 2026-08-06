@@ -382,7 +382,7 @@ export default function CategoriesPage() {
                     <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-dashed border-neutral-300">
                       <div className="font-space text-[9px] md:text-[10px] uppercase tracking-wider">
                         <span className="font-black text-black">{cat.productCount || '0'}</span>
-                        <span className="text-neutral-400 ml-1">PRINTS</span>
+                        <span className="text-neutral-400 ml-1">ITEMS</span>
                       </div>
                       {isAdmin && (
                         <>

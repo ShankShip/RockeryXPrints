@@ -58,22 +58,23 @@ export default function ProductCard({ product, idx }) {
         {/* Card body */}
         <div className="flex flex-col flex-1 p-3 sm:p-4 md:p-5">
           <Link to={`/products/${product.slug}`}>
-            <span className="font-space text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-neutral-400 block mb-0.5">
+            <span className="font-space text-[8px] sm:text-[9px] font-bold tracking-widest text-neutral-400 block mb-0.5">
               {product.category?.name}
             </span>
-            <h3 className="font-space font-extrabold text-sm sm:text-base md:text-lg uppercase tracking-tight leading-tight hover:text-neutral-500 transition-colors duration-75">
+            <h3 className="font-space font-extrabold text-sm sm:text-base md:text-lg tracking-tight leading-tight hover:text-neutral-500 transition-colors duration-75">
               {product.name}
             </h3>
           </Link>
-          {user?.role === 'admin' ? (
-            <div className="font-space text-[8px] sm:text-[9px] text-neutral-400 mt-1 mb-3">
-              {'█'.repeat(Math.round(product.rating || 5))}{'░'.repeat(5 - Math.round(product.rating || 5))} {product.salesCount || 0} SOLD
+          {Boolean(product.totalRatings && product.totalRatings > 0 && product.rating && product.rating > 0) ? (
+            <div className="font-space text-[8px] sm:text-[9px] text-neutral-400 mt-1 mb-3 uppercase">
+              {'█'.repeat(Math.round(product.rating))}{'░'.repeat(5 - Math.round(product.rating))}
+              {user?.role === 'admin' ? ` ${product.salesCount || 0} SOLD` : ''}
             </div>
-          ) : (
-            <div className="font-space text-[8px] sm:text-[9px] text-neutral-400 mt-1 mb-3">
-              {'█'.repeat(Math.round(product.rating || 5))}{'░'.repeat(5 - Math.round(product.rating || 5))}
+          ) : user?.role === 'admin' && product.salesCount > 0 ? (
+            <div className="font-space text-[8px] sm:text-[9px] text-neutral-400 mt-1 mb-3 uppercase">
+              {product.salesCount} SOLD
             </div>
-          )}
+          ) : null}
           <div className="flex items-center justify-between mt-auto pt-3 border-t-2 border-dashed border-neutral-200">
             <div>
               <div className="font-space font-black text-sm sm:text-base md:text-lg text-black leading-none">

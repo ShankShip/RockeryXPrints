@@ -178,10 +178,10 @@ function ProductCard({ product, index, onAdd, isAdded, isMobile }) {
 
           {/* Metadata */}
           <Link to={`/products/${product.slug}`} className="block font-space">
-            <span className="text-[10px] font-bold text-neutral-400 tracking-[0.2em] uppercase block mb-1">
+            <span className="text-[10px] font-bold text-neutral-400 tracking-[0.2em] block mb-1">
               {product.categoryDetails?.name || 'CATEGORY'}
             </span>
-            <h3 className="font-space font-extrabold text-base md:text-lg uppercase tracking-tight text-black mb-1 hover:text-neutral-500 transition-colors duration-75">
+            <h3 className="font-space font-extrabold text-base md:text-lg tracking-tight text-black mb-1 hover:text-neutral-500 transition-colors duration-75">
               {product.name}
             </h3>
           </Link>

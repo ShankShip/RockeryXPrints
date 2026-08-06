@@ -123,7 +123,7 @@ export default function ChangePasswordModal({ isOpen, onClose, onSuccess }) {
           <div className="flex items-center gap-2.5">
             <Lock size={20} className="text-amber-400 shrink-0" />
             <span className="font-space font-bold text-xs md:text-sm uppercase tracking-widest">
-              // CHANGE ACCESS KEY
+              CHANGE ACCESS KEY
             </span>
           </div>
           <button

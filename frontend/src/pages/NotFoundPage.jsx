@@ -40,9 +40,9 @@ export default function NotFoundPage() {
         </div>
 
         <div className="relative z-10">
-          <div className="font-space text-xs uppercase tracking-[0.4em] text-neutral-400 mb-4">
-            SIGNAL LOST // ERROR 404
-          </div>
+            <span className="font-space text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-neutral-400 mb-4 block">
+              SIGNAL LOST · ERROR 404
+            </span>
 
           <motion.h1
             className="font-inter font-black text-[13vw] md:text-[9vw] uppercase tracking-tighter leading-none text-white mb-6"

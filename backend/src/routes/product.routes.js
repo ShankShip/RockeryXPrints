@@ -6,7 +6,7 @@ import { addCategory, addCollection, addOrUpdateReview, addProduct, deleteCatego
 
 const prodRouter = Router()
 
-prodRouter.route('/categories').get(getCategories)
+prodRouter.route('/categories').get(optionalJwtVerifier, getCategories)
 prodRouter.route('/collections').get(getCollections)
 prodRouter.route('/products').get(getProducts)
 prodRouter.route('/products/:slug').get(optionalJwtVerifier, getProductBySlug)

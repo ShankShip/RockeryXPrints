@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { name: 'HOME', href: '/' },
   { name: 'COLLECTIONS', href: '/collections'},
   { name: 'CATEGORIES', href: '/categories' },
-  { name: 'SEARCH', href: '/shop' },
+  { name: 'SEARCH', href: '/shop' }
 ];
 
 export default function Navbar() {

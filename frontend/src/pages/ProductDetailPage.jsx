@@ -493,7 +493,7 @@ export default function ProductDetailPage() {
               <div className="absolute bottom-4 left-4 flex flex-col gap-1 z-10">
                 {product.stock <= 10 && (
                   <span className="bg-black text-white font-space text-[10px] font-bold px-3 py-1.5 uppercase tracking-widest border-2 border-black shadow-solid-sm">
-                    {product.stock === 0 ? 'SOLD OUT' : `LIMITED RUN // ONLY ${product.stock} LEFT`}
+                    {product.stock === 0 ? 'SOLD OUT' : `LIMITED RUN · ONLY ${product.stock} LEFT`}
                   </span>
                 )}
               </div>
@@ -785,7 +785,7 @@ export default function ProductDetailPage() {
                 /* ── REGULAR PRODUCT DETAILS VIEW ── */
                 <div>
                   {/* Product Title */}
-                  <h1 className="font-inter font-black text-3xl sm:text-4xl md:text-5xl uppercase tracking-tighter leading-none text-black mb-3">
+                  <h1 className="font-inter font-black text-3xl sm:text-4xl md:text-5xl tracking-tighter leading-none text-black mb-3">
                     {product.name}
                   </h1>
 
@@ -881,7 +881,7 @@ export default function ProductDetailPage() {
                     <h4 className="font-space text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">
                       CURATOR NOTES
                     </h4>
-                    <p className="font-space text-xs md:text-sm text-neutral-700 leading-relaxed uppercase">
+                    <p className="font-space text-xs md:text-sm text-neutral-700 leading-relaxed">
                       {product.description}
                     </p>
                   </div>

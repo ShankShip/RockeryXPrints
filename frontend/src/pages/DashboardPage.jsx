@@ -651,7 +651,7 @@ function ProfileTab({ user, onUpdateDetails }) {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-black">REGISTERED FULL NAME</label>
                 <input
                   type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
-                  style={{ fontSize: '16px' }} className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none"
+                  style={{ fontSize: '16px' }} className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold focus:outline-none"
                 />
               </div>
 
@@ -711,12 +711,12 @@ function ProfileTab({ user, onUpdateDetails }) {
               {addressesList.length > 0 ? (
                 <div className="space-y-3">
                   {addressesList.map((addr, idx) => (
-                    <div key={idx} className={`border-2 p-3.5 text-[10px] md:text-xs uppercase flex justify-between items-center gap-4 transition-colors ${editingAddressIdx === idx ? 'border-dashed border-neutral-500 bg-neutral-100' : 'border-black bg-white'}`}>
+                    <div key={idx} className={`border-2 p-3.5 text-[10px] md:text-xs flex justify-between items-center gap-4 transition-colors ${editingAddressIdx === idx ? 'border-dashed border-neutral-500 bg-neutral-100' : 'border-black bg-white'}`}>
                       <div>
-                        <span className="font-bold text-neutral-500 block mb-1">COORDINATE #{idx + 1} {editingAddressIdx === idx && '(EDITING)'}</span>
+                        <span className="font-bold text-neutral-500 block mb-1 uppercase">COORDINATE #{idx + 1} {editingAddressIdx === idx && '(EDITING)'}</span>
                         <span className="font-black text-black block">{addr.street}, {addr.city}</span>
                         <span className="text-neutral-700">{addr.state} — {addr.zipCode} ({addr.country})</span>
-                        <span className="block text-neutral-600 font-bold mt-1">PHONE: {addr.phone || 'REQUIRED'}</span>
+                        <span className="block text-neutral-600 font-bold mt-1 uppercase">PHONE: {addr.phone || 'REQUIRED'}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2 shrink-0">
                         <button
@@ -755,8 +755,8 @@ function ProfileTab({ user, onUpdateDetails }) {
                     <label className="text-[10px] font-bold uppercase">STREET ADDRESS *</label>
                     <input
                       type="text" required value={street} onChange={(e) => setStreet(e.target.value)}
-                      placeholder="12/B BRUTALIST AVENUE, APARTMENT / SUITE" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none"
+                      placeholder="12/B Brutalist Avenue, Apartment / Suite" style={{ fontSize: '16px' }}
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold focus:outline-none"
                     />
                   </div>
                   
@@ -764,8 +764,8 @@ function ProfileTab({ user, onUpdateDetails }) {
                     <label className="text-[10px] font-bold uppercase">CITY *</label>
                     <input
                       type="text" required value={city} onChange={(e) => setCity(e.target.value)}
-                      placeholder="NEW DELHI / MUMBAI / BANGALORE" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none"
+                      placeholder="New Delhi / Mumbai / Bangalore" style={{ fontSize: '16px' }}
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold focus:outline-none"
                     />
                   </div>
                   
@@ -776,11 +776,11 @@ function ProfileTab({ user, onUpdateDetails }) {
                       value={state}
                       onChange={(e) => setState(e.target.value)}
                       style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none cursor-pointer"
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold focus:outline-none cursor-pointer"
                     >
                       <option value="">-- SELECT STATE IN INDIA --</option>
                       {INDIAN_STATES.map((st) => (
-                        <option key={st} value={st}>{st.toUpperCase()}</option>
+                        <option key={st} value={st}>{st}</option>
                       ))}
                     </select>
                   </div>
@@ -790,7 +790,7 @@ function ProfileTab({ user, onUpdateDetails }) {
                     <input
                       type="text" required value={zipCode} onChange={(e) => setZipCode(e.target.value)}
                       placeholder="110001" maxLength="6" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none font-mono"
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold focus:outline-none font-mono"
                     />
                   </div>
                   
@@ -799,7 +799,7 @@ function ProfileTab({ user, onUpdateDetails }) {
                     <input
                       type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91 9876543210" style={{ fontSize: '16px' }}
-                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold uppercase focus:outline-none font-mono"
+                      className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold focus:outline-none font-mono"
                     />
                   </div>
                   
@@ -873,7 +873,7 @@ function ProfileTab({ user, onUpdateDetails }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b-2 border-dashed border-neutral-300 pb-5 mb-5">
             <div>
               <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">FULL NAME</span>
-              <span className="font-inter font-black text-lg md:text-xl uppercase text-black">{user?.fullName || 'USER'}</span>
+              <span className="font-inter font-black text-lg md:text-xl text-black">{user?.fullName || 'USER'}</span>
             </div>
             <div>
               <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">EMAIL ADDRESS</span>
@@ -898,7 +898,7 @@ function ProfileTab({ user, onUpdateDetails }) {
             {user?.addresses && user.addresses.length > 0 ? (
               <div className="space-y-2.5">
                 {user.addresses.map((addr, index) => (
-                  <div key={index} className="border-2 border-black p-3.5 bg-neutral-50 text-[10px] md:text-xs uppercase leading-relaxed font-space flex justify-between items-center gap-3">
+                  <div key={index} className="border-2 border-black p-3.5 bg-neutral-50 text-[10px] md:text-xs leading-relaxed font-space flex justify-between items-center gap-3">
                     <div>
                       <span className="font-black text-black block text-xs">{addr.street}, {addr.city}</span>
                       <span className="text-neutral-700 font-bold">{addr.state} — {addr.zipCode} ({addr.country || 'INDIA'})</span>

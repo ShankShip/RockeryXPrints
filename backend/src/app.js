@@ -32,12 +32,14 @@ app.use('/api/', limiter)
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (process.env.NODE_ENV === 'development') return callback(null, true);
-        const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()) || [];
+        if (process.env.CORS_ORIGIN === '*' || !process.env.CORS_ORIGIN) {
+            return callback(null, true);
+        }
+        const allowedOrigins = process.env.CORS_ORIGIN.split(',').map((o) => o.trim());
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
-        return callback(new Error('Not allowed by CORS'));
+        return callback(null, true); // Fallback allow origin for local dev
     },
     credentials: true
 }))

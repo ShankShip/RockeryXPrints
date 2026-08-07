@@ -17,5 +17,7 @@ export const errorHandler = (err, req, res, next) => {
         ...(process.env.NODE_ENV === 'development' ? { stack: error.stack } : {})
     };
 
+    console.error("Global Error Logger:", err);
+
     return res.status(error.statusCode).json(response);
 };

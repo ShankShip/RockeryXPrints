@@ -45,15 +45,15 @@ app.use(cors({
 app.use(express.json({ limit: "16kb" }))
 app.use(express.urlencoded({ extended: true, limit: "16kb" }))
 
-// Sanitize data against NoSQL Injection and XSS
+// Bypass Express 5 read-only getters for query and params so mongoSanitize and xssClean can reassign them
 app.use((req, res, next) => {
-    ['body', 'params', 'headers', 'query'].forEach((key) => {
-        if (req[key]) {
-            mongoSanitize.sanitize(req[key]);
-        }
-    });
+    Object.defineProperty(req, 'query', { value: req.query, writable: true, configurable: true });
+    Object.defineProperty(req, 'params', { value: req.params, writable: true, configurable: true });
     next();
 });
+
+// Sanitize data against NoSQL Injection and XSS
+app.use(mongoSanitize())
 app.use(xssClean)
 
 app.use(express.static("public"))

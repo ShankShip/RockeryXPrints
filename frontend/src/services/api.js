@@ -61,10 +61,38 @@ export const addToCartAPI = (data) => api.post('/users/add-cart', data);
 export const updateCartQuantityAPI = (productId, quantity) => api.post('/users/update-cart-qty', { productId, quantity });
 export const removeFromCartAPI = (productId) => api.delete(`/users/remove-cart/${productId}`);
 
+// ─── Simple Cache Wrapper ──────────────────────────────────────────────────
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 mins
+
+const withCache = (apiCall, keyFunc) => {
+    return async (...args) => {
+        const key = keyFunc(...args);
+        if (cache.has(key)) {
+            const { data, timestamp } = cache.get(key);
+            if (Date.now() - timestamp < CACHE_TTL) {
+                return { data }; // Mock Axios response structure
+            }
+        }
+        const response = await apiCall(...args);
+        cache.set(key, { data: response.data, timestamp: Date.now() });
+        return response;
+    };
+};
+
 // ─── Products ──────────────────────────────────────────────────────────────
-export const getCategories = (isAdmin = false) => isAdmin ? api.get('/prods/admin/categories') : api.get('/prods/categories');
-export const getCollections = (isAdmin = false) => isAdmin ? api.get('/prods/admin/collections') : api.get('/prods/collections');
-export const getProducts = (params) => api.get('/prods/products', { params });
+export const getCategories = withCache(
+    (isAdmin = false) => isAdmin ? api.get('/prods/admin/categories') : api.get('/prods/categories'),
+    (isAdmin = false) => `categories-${isAdmin}`
+);
+export const getCollections = withCache(
+    (isAdmin = false) => isAdmin ? api.get('/prods/admin/collections') : api.get('/prods/collections'),
+    (isAdmin = false) => `collections-${isAdmin}`
+);
+export const getProducts = withCache(
+    (params) => api.get('/prods/products', { params }),
+    (params) => `products-${JSON.stringify(params || {})}`
+);
 export const getProductBySlug = (slug) => api.get(`/prods/products/${slug}`);
 export const addCategoryAPI = (data) => api.post('/prods/add-category', data, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const updateCategoryAPI = (categoryId, data) => api.post(`/prods/update-category/${categoryId}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });

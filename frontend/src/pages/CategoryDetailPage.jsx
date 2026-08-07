@@ -236,6 +236,7 @@ export default function CategoryDetailPage() {
   // Fetch category data matching slug and filter products
   const fetchCategoryDetails = async () => {
     setLoading(true);
+    setCurrentPage(1);
     setErrorMsg('');
     try {
       // Get category object by fetching all categories and finding by slug or name
@@ -280,7 +281,6 @@ export default function CategoryDetailPage() {
   };
 
   useEffect(() => {
-    setCurrentPage(1);
     fetchCategoryDetails();
   }, [categorySlug, isAdmin]);
 

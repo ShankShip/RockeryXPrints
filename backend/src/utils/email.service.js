@@ -183,6 +183,8 @@ export async function sendOrderConfirmationEmail({ order, user }) {
     const to = user.email;
     const toName = user.fullName;
     const subject = `Order Confirmed [${order.orderId}] — RockeryXPrints`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const orderUrl = `${frontendUrl}/orders/${order.orderId}`;
 
     const itemsHtml = (order.orderItems || []).map(item => `
       <tr>
@@ -241,13 +243,19 @@ export async function sendOrderConfirmationEmail({ order, user }) {
             </tfoot>
           </table>
 
-          <div style="border: 2px solid #000000; padding: 16px;">
+          <div style="border: 2px solid #000000; padding: 16px; margin-bottom: 24px;">
             <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: bold; color: #666666; text-transform: uppercase; letter-spacing: 1px;">SHIPPING TO:</p>
             <p style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; line-height: 1.5;">
               ${order.shippingAddress?.street || ''},<br>
               ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} — ${order.shippingAddress?.zipCode || ''}<br>
               ${order.shippingAddress?.country || ''} · PHONE: ${order.shippingAddress?.phone || ''}
             </p>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0 16px 0;">
+            <a href="${orderUrl}" style="display: inline-block; background-color: #000000; color: #ffffff; padding: 14px 24px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 2px solid #000000;">
+              VIEW YOUR ORDER & TRACK STATUS &rarr;
+            </a>
           </div>
         </div>
 
@@ -263,7 +271,7 @@ export async function sendOrderConfirmationEmail({ order, user }) {
 }
 
 /**
- * Sends an email notification when an administrator updates the order status
+ * Sends an email notification when an administrator updates the order status or message
  * @param {Object} params
  * @param {Object} params.order - The updated mongoose order document
  * @param {Object} params.user - The associated user object
@@ -272,6 +280,8 @@ export async function sendOrderConfirmationEmail({ order, user }) {
 export async function sendOrderStatusEmail({ order, user, newStatus }) {
     const to = user.email;
     const toName = user.fullName;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const orderUrl = `${frontendUrl}/orders/${order.orderId}`;
     const subject = `Order Update: ${order.orderId} is now ${newStatus.toUpperCase()} — RockeryXPrints`;
 
     // Pick dynamic colors based on status for aesthetic accent
@@ -304,19 +314,32 @@ export async function sendOrderStatusEmail({ order, user, newStatus }) {
           </p>
           
           <!-- Status Banner -->
-          <div style="border: 4px solid #000000; padding: 20px; text-align: center; background-color: #f8fafc; margin-bottom: 28px;">
+          <div style="border: 4px solid #000000; padding: 20px; text-align: center; background-color: #f8fafc; margin-bottom: 24px;">
             <span style="font-size: 12px; font-weight: bold; color: #666666; text-transform: uppercase; display: block; margin-bottom: 6px;">CURRENT ORDER STATUS:</span>
             <span style="font-size: 26px; font-weight: 900; text-transform: uppercase; color: ${statusColor}; letter-spacing: 1px;">${newStatus.toUpperCase()}</span>
           </div>
 
-          <div style="border: 2px solid #000000; padding: 16px; margin-bottom: 20px;">
+          ${order.message ? `
+          <!-- Order Message Box -->
+          <div style="border: 3px solid #000000; padding: 16px; background-color: #fefce8; margin-bottom: 24px;">
+            <p style="margin: 0; font-size: 13px; font-weight: 700; color: #000000; line-height: 1.5; white-space: pre-wrap;">${order.message}</p>
+          </div>
+          ` : ''}
+
+          <div style="border: 2px solid #000000; padding: 16px; margin-bottom: 24px;">
             <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: bold; color: #666666; text-transform: uppercase;">ORDER ITEMS:</p>
             <p style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;">${itemsSummary}</p>
             <hr style="border: none; border-top: 1px dashed #cccccc; margin: 12px 0;">
             <p style="margin: 0; font-size: 13px; font-weight: 900;">TOTAL AMOUNT: ₹${(order.finalTotal || 0).toLocaleString('en-IN')}</p>
           </div>
+
+          <div style="text-align: center; margin: 28px 0 16px 0;">
+            <a href="${orderUrl}" style="display: inline-block; background-color: #000000; color: #ffffff; padding: 14px 24px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 2px solid #000000;">
+              VIEW ORDER DETAILS & TRACKING &rarr;
+            </a>
+          </div>
           
-          <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5; text-transform: uppercase;">
+          <p style="margin: 16px 0 0 0; font-size: 12px; color: #666666; line-height: 1.5; text-transform: uppercase; text-align: center;">
             ${newStatus === 'Delivered' ? 'THANK YOU FOR SHOPPING WITH ROCKERYXPRINTS! WE HOPE YOU LOVE YOUR PRINTS.' : 'WE WILL KEEP YOU INFORMED AS YOUR ORDER PROGRESSES.'}
           </p>
         </div>
@@ -331,3 +354,99 @@ export async function sendOrderStatusEmail({ order, user, newStatus }) {
 
     return sendEmail({ to, toName, subject, htmlContent });
 }
+
+/**
+ * Sends a notification email to the administrator (BREVO_SENDER_EMAIL) when a new order is placed
+ * @param {Object} params
+ * @param {Object} params.order - The created order document
+ * @param {Object} params.user - The user who placed the order
+ */
+export async function sendAdminNewOrderNotificationEmail({ order, user }) {
+    const adminEmail = process.env.BREVO_SENDER_EMAIL || 'no-reply@rockeryxprints.com';
+    const adminName = process.env.BREVO_SENDER_NAME || 'RockeryXPrints Admin';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const orderUrl = `${frontendUrl}/orders/${order.orderId}`;
+    const subject = `🚨 NEW ORDER RECEIVED: #${order.orderId} (₹${(order.finalTotal || 0).toLocaleString('en-IN')}) — RockeryXPrints`;
+
+    const itemsHtml = (order.orderItems || []).map(item => `
+      <tr>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e5e5e5; font-weight: bold;">
+          ${item.name} <span style="color: #666666; font-weight: normal;">×${item.quantity}</span>
+        </td>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e5e5e5; text-align: right; font-weight: bold;">
+          ₹${((item.priceAtPurchase || 0) * item.quantity).toLocaleString('en-IN')}
+        </td>
+      </tr>
+    `).join('');
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Courier New', Courier, monospace, sans-serif; color: #000000;">
+      <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border: 4px solid #000000; padding: 0;">
+        <div style="background-color: #000000; color: #ffffff; padding: 24px;">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase;">🚨 NEW ORDER PLACED</h1>
+          <p style="margin: 4px 0 0 0; font-size: 13px; font-weight: bold; color: #10b981;">// ACTION REQUIRED: PROCESS ORDER</p>
+        </div>
+        
+        <div style="padding: 32px 24px;">
+          <div style="border: 2px solid #000000; padding: 16px; background-color: #f8fafc; margin-bottom: 24px;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; text-transform: uppercase;">
+              ORDER ID: <span style="color: #2563eb;">${order.orderId}</span>
+            </p>
+            <p style="margin: 0 0 4px 0; font-size: 12px;">
+              <strong>CUSTOMER:</strong> ${user?.fullName || 'N/A'} (${user?.email || 'N/A'})
+            </p>
+            <p style="margin: 0; font-size: 12px;">
+              <strong>PAYMENT:</strong> ${order.paymentMethod?.toUpperCase()} (${order.paymentStatus})
+            </p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+            <thead>
+              <tr style="background-color: #000000; color: #ffffff; text-align: left;">
+                <th style="padding: 10px 8px; text-transform: uppercase;">PURCHASED ITEM</th>
+                <th style="padding: 10px 8px; text-align: right; text-transform: uppercase;">SUBTOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style="padding: 12px 8px; font-weight: bold; text-transform: uppercase;">TOTAL REVENUE:</td>
+                <td style="padding: 12px 8px; text-align: right; font-size: 18px; font-weight: 900;">₹${(order.finalTotal || 0).toLocaleString('en-IN')}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div style="border: 2px solid #000000; padding: 16px; margin-bottom: 24px;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: bold; color: #666666; text-transform: uppercase;">SHIPPING ADDRESS:</p>
+            <p style="margin: 0; font-size: 12px; font-weight: 700; text-transform: uppercase; line-height: 1.5;">
+              ${order.shippingAddress?.street || ''}, ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} - ${order.shippingAddress?.zipCode || ''}<br>
+              PHONE: ${order.shippingAddress?.phone || 'N/A'}
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 24px 0 12px 0;">
+            <a href="${orderUrl}" style="display: inline-block; background-color: #000000; color: #ffffff; padding: 14px 24px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 2px solid #000000;">
+              OPEN ORDER IN ADMIN SYSTEM &rarr;
+            </a>
+          </div>
+        </div>
+
+        <div style="border-top: 4px solid #000000; padding: 16px 24px; background-color: #f5f5f5; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666666;">
+          &copy; ${new Date().getFullYear()} ROCKERYXPRINTS ADMIN SYSTEM NOTIFICATION.
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+
+    return sendEmail({ to: adminEmail, toName: adminName, subject, htmlContent });
+}
+

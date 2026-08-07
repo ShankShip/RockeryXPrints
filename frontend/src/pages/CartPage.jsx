@@ -35,7 +35,7 @@ const Field = ({ label, id, type = 'text', value, onChange, required, placeholde
 );
 
 // Collapsible order summary for mobile
-function MobileOrderSummary({ subtotal, mrpTotal, tax, shippingFee, finalTotal }) {
+function MobileOrderSummary({ subtotal, mrpTotal, shippingFee, finalTotal }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="lg:hidden border-t-4 border-black bg-white sticky bottom-0 z-30 shadow-[0_-4px_0_0_#000]">
@@ -64,7 +64,6 @@ function MobileOrderSummary({ subtotal, mrpTotal, tax, shippingFee, finalTotal }
               <div className="flex justify-between"><span className="text-neutral-400 uppercase">MRP</span><span className="line-through text-neutral-400">₹{mrpTotal.toLocaleString('en-IN')}</span></div>
               <div className="flex justify-between"><span className="text-neutral-400 uppercase">SUBTOTAL</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
               <div className="flex justify-between"><span className="text-neutral-400 uppercase">SHIPPING</span><span className="font-bold">{shippingFee > 0 ? `₹${shippingFee}` : 'FREE'}</span></div>
-              <div className="flex justify-between"><span className="text-neutral-400 uppercase">TAX 18%</span><span>₹{tax.toLocaleString('en-IN')}</span></div>
             </div>
           </motion.div>
         )}
@@ -117,9 +116,8 @@ export default function CartPage() {
 
   const subtotal  = displayItems.reduce((s, i) => s + i.product.sellingPrice * i.quantity, 0);
   const mrpTotal  = displayItems.reduce((s, i) => s + i.product.mrp * i.quantity, 0);
-  const tax       = Math.round(subtotal * 0.18);
   const shippingFee = paymentMethod === 'cod' ? 50 : 0;
-  const finalTotal = subtotal + tax + shippingFee;
+  const finalTotal = subtotal + shippingFee;
 
   const handleProceedToShipping = () => {
     if (!user) {
@@ -518,14 +516,14 @@ export default function CartPage() {
                         <input type="radio" name="payment" value="online" checked={paymentMethod === 'online'} onChange={() => setPaymentMethod('online')} className="accent-black" />
                         ONLINE PAYMENT (FREE SHIPPING)
                       </span>
-                      <span>₹{(subtotal + tax).toLocaleString('en-IN')}</span>
+                      <span>₹{subtotal.toLocaleString('en-IN')}</span>
                     </label>
                     <label className={`flex items-center justify-between p-3 border-2 border-black cursor-pointer transition-colors duration-75 text-xs font-bold uppercase ${paymentMethod === 'cod' ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-50'}`}>
                       <span className="flex items-center gap-2">
                         <input type="radio" name="payment" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} className="accent-black" />
                         CASH ON DELIVERY (+₹50 COD FEE)
                       </span>
-                      <span>₹{(subtotal + tax + 50).toLocaleString('en-IN')}</span>
+                      <span>₹{(subtotal + 50).toLocaleString('en-IN')}</span>
                     </label>
                   </div>
                 </div>
@@ -568,14 +566,13 @@ export default function CartPage() {
                 <div className="flex justify-between"><span className="text-neutral-400 uppercase">MRP</span><span className="line-through text-neutral-400">₹{mrpTotal.toLocaleString('en-IN')}</span></div>
                 <div className="flex justify-between"><span className="text-neutral-400 uppercase">SUBTOTAL</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
                 <div className="flex justify-between"><span className="text-neutral-400 uppercase">SHIPPING</span><span className="font-bold">{shippingFee > 0 ? `₹${shippingFee}` : 'FREE'}</span></div>
-                <div className="flex justify-between"><span className="text-neutral-400 uppercase">TAX 18%</span><span>₹{tax.toLocaleString('en-IN')}</span></div>
               </div>
               <div className="border-t-2 border-white mt-5 pt-5 flex justify-between items-baseline">
                 <span className="font-space font-bold uppercase tracking-widest text-xs">FINAL TOTAL</span>
                 <span className="font-space font-black text-3xl">₹{finalTotal.toLocaleString('en-IN')}</span>
               </div>
               <div className="mt-5 font-space text-[10px] text-neutral-400 uppercase tracking-wider border-t border-neutral-700 pt-4">
-                Secured payment · Taxes included · Free returns 7 days
+                Secured payment · Free returns 7 days
               </div>
             </div>
           </div>
@@ -583,7 +580,7 @@ export default function CartPage() {
       </div>
 
       {/* Mobile sticky summary */}
-      <MobileOrderSummary subtotal={subtotal} mrpTotal={mrpTotal} tax={tax} shippingFee={shippingFee} finalTotal={finalTotal} />
+      <MobileOrderSummary subtotal={subtotal} mrpTotal={mrpTotal} shippingFee={shippingFee} finalTotal={finalTotal} />
 
       {/* Inline Email Verification Modal */}
       <EmailVerificationModal

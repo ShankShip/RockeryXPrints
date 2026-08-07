@@ -1,26 +1,28 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode, useEffect, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { Provider, useDispatch } from 'react-redux'
+import { HelmetProvider } from 'react-helmet-async'
 import './index.css'
 import { store } from './store/store.js'
 import { fetchCurrentUser } from './store/authSlice'
 import { fetchCart } from './store/cartSlice'
+import { ErrorBoundary } from './components/common/ErrorBoundary.jsx'
 
-// Pages
-import Home from './pages/Home.jsx'
-import AuthPage from './pages/AuthPage.jsx'
-import ProductDetailPage from './pages/ProductDetailPage.jsx'
-import CartPage from './pages/CartPage.jsx'
-import DashboardPage from './pages/DashboardPage.jsx'
-import OrderDetailPage from './pages/OrderDetailPage.jsx'
-import NotFoundPage from './pages/NotFoundPage.jsx'
-import CategoriesPage from './pages/CategoriesPage.jsx'
-import CollectionsPage from './pages/CollectionsPage.jsx'
-import ShopPage from './pages/ShopPage.jsx'
-import CategoryDetailPage from './pages/CategoryDetailPage.jsx'
-import ReturnPolicyPage from './pages/ReturnPolicyPage.jsx'
-import TermsPage from './pages/TermsPage.jsx'
+// Lazy Loaded Pages
+const Home = lazy(() => import('./pages/Home.jsx'))
+const AuthPage = lazy(() => import('./pages/AuthPage.jsx'))
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage.jsx'))
+const CartPage = lazy(() => import('./pages/CartPage.jsx'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'))
+const OrderDetailPage = lazy(() => import('./pages/OrderDetailPage.jsx'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'))
+const CategoriesPage = lazy(() => import('./pages/CategoriesPage.jsx'))
+const CollectionsPage = lazy(() => import('./pages/CollectionsPage.jsx'))
+const ShopPage = lazy(() => import('./pages/ShopPage.jsx'))
+const CategoryDetailPage = lazy(() => import('./pages/CategoryDetailPage.jsx'))
+const ReturnPolicyPage = lazy(() => import('./pages/ReturnPolicyPage.jsx'))
+const TermsPage = lazy(() => import('./pages/TermsPage.jsx'))
 import AuthLayout from './components/AuthLayout.jsx'
 
 const router = createBrowserRouter([
@@ -54,11 +56,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/orders/:orderId',
-    element: (
-      <AuthLayout authentication={true}>
-        <OrderDetailPage />
-      </AuthLayout>
-    ),
+    element: <OrderDetailPage />,
   },
   {
     path: '/collections',
@@ -112,12 +110,26 @@ function AppWrapper({ children }) {
   return children;
 }
 
+const FallbackLoader = () => (
+  <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
+    <div className="font-space font-black uppercase text-2xl animate-pulse tracking-widest text-black">
+      LOADING SYSTEMS...
+    </div>
+  </div>
+);
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Provider store={store}>
-      <AppWrapper>
-        <RouterProvider router={router} />
-      </AppWrapper>
-    </Provider>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <Provider store={store}>
+          <AppWrapper>
+            <Suspense fallback={<FallbackLoader />}>
+              <RouterProvider router={router} />
+            </Suspense>
+          </AppWrapper>
+        </Provider>
+      </HelmetProvider>
+    </ErrorBoundary>
   </StrictMode>
 )

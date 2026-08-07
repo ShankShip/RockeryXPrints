@@ -2,6 +2,8 @@ import { Router } from "express";
 import { upload } from "../middleware/multer.middleware.js";
 import { addToCart, changePassword, getCurrentUser, getUserCart, loginUser, logoutUser, refreshAccessToken, registerUser, removeFromCart, updateAccountDetails, updateAvatar, updateCartQuantity, sendVerificationOtp, verifyEmailOtp, sendPasswordChangeOtp, changePasswordWithOtp } from "../controllers/user.controller.js";
 import { jwtVerifier, optionalJwtVerifier } from "../middleware/jwt.middleware.js";
+import { validate } from "../middleware/validate.middleware.js";
+import { registerSchema, loginSchema, updateDetailsSchema } from "../validators/user.validator.js";
 
 const userRouter = Router();
 
@@ -12,10 +14,11 @@ userRouter.route('/register').post(
             maxCount: 1
         }
     ]),
+    validate(registerSchema),
     registerUser
 );
 
-userRouter.route('/login').post(loginUser);
+userRouter.route('/login').post(validate(loginSchema), loginUser);
 
 // Logout should always succeed regardless of whether token is valid or expired
 userRouter.route('/logout').get(optionalJwtVerifier, logoutUser);
@@ -29,7 +32,7 @@ userRouter.route('/refresh-token').post(refreshAccessToken);
 
 userRouter.route('/current-user').get(getCurrentUser);
 
-userRouter.route('/update-details').post(updateAccountDetails);
+userRouter.route('/update-details').post(validate(updateDetailsSchema), updateAccountDetails);
 
 userRouter.route('/update-avatar').post(
     upload.fields([{

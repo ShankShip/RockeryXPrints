@@ -85,7 +85,7 @@ export const deleteReviewAPI = (reviewId) => api.delete(`/prods/reviews/${review
 export const createOrder = (data) => api.post('/orders/create', data);
 export const getOrders = () => api.get('/orders/get-orders');
 export const getOrderByIdAPI = (orderId) => api.get(`/orders/${orderId}`);
-export const cancelMyOrderAPI = (orderId) => api.patch(`/orders/cancel/${orderId}`);
+
 export const getAllOrdersAPI = () => api.get('/orders/get-all-orders');
 export const updateOrderStatusAPI = (orderId, data) => api.patch(`/orders/update-status/${orderId}`, data);
 

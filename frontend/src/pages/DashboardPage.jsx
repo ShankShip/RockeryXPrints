@@ -3,15 +3,16 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
-import { Package, Settings, LogOut, ChevronRight, ChevronDown, User, Shield, Check, Edit2, Upload, ShieldCheck, Lock, MapPin } from 'lucide-react';
+import { Package, Settings, LogOut, ChevronRight, ChevronDown, User, Shield, Check, Edit2, Upload, ShieldCheck, Lock, MapPin, MessageSquare, AlertTriangle, X } from 'lucide-react';
 import { logoutThunk, setUser } from '../store/authSlice';
-import { updateDetails, changePassword, getOrders, getAllOrdersAPI, updateOrderStatusAPI, updateAvatarAPI } from '../services/api';
+import { updateDetails, changePassword, getOrders, getAllOrdersAPI, updateAvatarAPI } from '../services/api';
 import Navbar from '../components/landing/Navbar';
 import Popup from '../components/landing/Popup';
 import { SkeletonRow } from '../components/common/Skeleton';
 import EmailVerificationModal from '../components/cart/EmailVerificationModal';
 import ChangePasswordModal from '../components/profile/ChangePasswordModal';
 import { INDIAN_STATES } from '../utils/constants';
+import { renderTextWithLinks } from '../utils/formatters';
 
 
 const spring = { type: 'spring', bounce: 0, duration: 0.25 };
@@ -33,22 +34,26 @@ const PAYMENT_STYLES = {
 
 const STATUS_OPTIONS = ['Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'];
 
-/* ── Order card for mobile view ── */
-function OrderCard({ order, idx, isAdmin, onStatusChange }) {
-  const [open, setOpen] = useState(false);
-  const [updating, setUpdating] = useState(false);
+const getDefaultMessageForStatus = (status) => {
+  switch (status) {
+    case 'Processing':
+      return "Your order has been confirmed and is currently being processed by our team. We will notify you once it has been shipped.";
+    case 'Shipped':
+      return "Your order has been shipped and is on its way to you! You can track your package using the provided tracking details.";
+    case 'Out for Delivery':
+      return "Good news! Your order is out for delivery today. Please ensure someone is available to receive the package.";
+    case 'Delivered':
+      return "Your order has been successfully delivered. Thank you for shopping with us!";
+    case 'Cancelled':
+      return "Your order has been cancelled. If you have any questions, please contact our support team.";
+    default:
+      return "Your order status has been updated.";
+  }
+};
 
-  const handleStatusSelect = async (e) => {
-    const newStatus = e.target.value;
-    setUpdating(true);
-    try {
-      await onStatusChange(order._id, newStatus);
-    } catch (err) {
-      // handled parent
-    } finally {
-      setUpdating(false);
-    }
-  };
+/* ── Order card for mobile view ── */
+function OrderCard({ order, idx, isAdmin }) {
+  const [open, setOpen] = useState(false);
 
   return (
     <motion.div
@@ -95,6 +100,13 @@ function OrderCard({ order, idx, isAdmin, onStatusChange }) {
                 </div>
               )}
 
+              {/* Order Message if present */}
+              {order.message && !isAdmin && (
+                <div className="border-2 border-black bg-yellow-50 p-2.5">
+                  <span className="font-mono text-black normal-case block leading-tight whitespace-pre-wrap break-words">{renderTextWithLinks(order.message)}</span>
+                </div>
+              )}
+
               {/* Items */}
               <div className="space-y-1">
                 <span className="text-neutral-400 font-bold block">ITEMS:</span>
@@ -114,23 +126,6 @@ function OrderCard({ order, idx, isAdmin, onStatusChange }) {
                 </span>
               </div>
 
-              {/* Status Update (Admin Only) */}
-              {isAdmin && (
-                <div className="pt-3 border-t border-neutral-300 flex items-center gap-2">
-                  <span className="text-neutral-500 font-bold">SET STATUS:</span>
-                  <select
-                    value={order.orderStatus}
-                    onChange={handleStatusSelect}
-                    disabled={updating}
-                    className="border-2 border-black bg-white font-space text-[10px] font-bold px-2 py-1 focus:outline-none"
-                  >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
               {/* Total & Payment details */}
               <div className="border-t border-neutral-300 pt-2 flex justify-between font-black text-sm">
                 <span>TOTAL</span>
@@ -149,7 +144,7 @@ function OrderCard({ order, idx, isAdmin, onStatusChange }) {
                   to={`/orders/${order._id}`}
                   className="w-full flex items-center justify-center gap-1.5 bg-black text-white font-space font-bold uppercase text-[10px] py-2 border-2 border-black hover:bg-white hover:text-black transition-colors duration-75"
                 >
-                  VIEW FULL DETAILS <ChevronRight size={12} />
+                  VIEW FULL ORDER & DETAILS <ChevronRight size={12} />
                 </Link>
               </div>
             </div>
@@ -254,8 +249,7 @@ function OrdersTab({ orders, loading }) {
 }
 
 /* ── Admin Orders Tab ── */
-function AdminOrdersTab({ allOrders, onStatusChange, loading }) {
-  const [updatingId, setUpdatingId] = useState(null);
+function AdminOrdersTab({ allOrders, loading }) {
   const [statusFilter, setStatusFilter] = useState('all');
 
   if (loading) {
@@ -268,17 +262,6 @@ function AdminOrdersTab({ allOrders, onStatusChange, loading }) {
       </div>
     );
   }
-
-  const handleStatusChange = async (orderId, newStatus) => {
-    setUpdatingId(orderId);
-    try {
-      await onStatusChange(orderId, newStatus);
-    } catch (err) {
-      // handled by parent
-    } finally {
-      setUpdatingId(null);
-    }
-  };
 
   const filteredOrders = statusFilter === 'all'
     ? allOrders
@@ -322,7 +305,7 @@ function AdminOrdersTab({ allOrders, onStatusChange, loading }) {
           {/* Mobile view */}
           <div className="md:hidden flex flex-col gap-2">
             {filteredOrders.map((o, i) => (
-              <OrderCard key={o._id} order={o} idx={i} isAdmin onStatusChange={handleStatusChange} />
+              <OrderCard key={o._id} order={o} idx={i} isAdmin />
             ))}
           </div>
 
@@ -368,16 +351,9 @@ function AdminOrdersTab({ allOrders, onStatusChange, loading }) {
                       {order.paymentStatus}
                     </td>
                     <td className="px-4 py-4 border-r-2 border-black">
-                      <select
-                        value={order.orderStatus}
-                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                        disabled={updatingId === order._id}
-                        className="border-2 border-black bg-white font-space text-[10px] font-bold px-2 py-1 focus:outline-none focus:ring-0 focus:border-black cursor-pointer"
-                      >
-                        {STATUS_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt.toUpperCase()}</option>
-                        ))}
-                      </select>
+                      <span className={`inline-block border-2 px-2 py-0.5 uppercase tracking-wider font-bold ${STATUS_STYLES[order.orderStatus] || ''}`}>
+                        [ {order.orderStatus} ]
+                      </span>
                     </td>
                     <td className="px-4 py-4 font-black text-sm">₹{order.finalTotal.toLocaleString('en-IN')}</td>
                   </motion.tr>
@@ -387,6 +363,7 @@ function AdminOrdersTab({ allOrders, onStatusChange, loading }) {
           </div>
         </>
       )}
+
     </div>
   );
 }
@@ -1015,15 +992,7 @@ export default function DashboardPage() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [activeTab]);
 
-  // Handler to update status (Admin only)
-  const handleOrderStatusChange = async (orderId, newStatus) => {
-    try {
-      await updateOrderStatusAPI(orderId, { status: newStatus });
-      fetchDashboardData();
-    } catch (err) {
-      triggerAlert('FAILED TO UPDATE ORDER STATUS ON DATABASE.', 'ERROR OCCURRED');
-    }
-  };
+
 
   const handleUpdateDetails = (updatedUser) => {
     dispatch(setUser({ user: updatedUser }));
@@ -1119,7 +1088,7 @@ export default function DashboardPage() {
             >
               {activeTab === 'orders' && <OrdersTab orders={orders} loading={loading} />}
               {activeTab === 'all-orders' && user.role === 'admin' && (
-                <AdminOrdersTab allOrders={allOrders} onStatusChange={handleOrderStatusChange} loading={loading} />
+                <AdminOrdersTab allOrders={allOrders} loading={loading} />
               )}
               {activeTab === 'profile' && (
                 <ProfileTab user={user} onUpdateDetails={handleUpdateDetails} />

@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import crypto from "crypto";
-import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../utils/email.service.js";
+import { sendOrderConfirmationEmail, sendOrderStatusEmail, sendAdminNewOrderNotificationEmail } from "../utils/email.service.js";
 
 const createOrder = asyncHandler(async (req, res) => {
     if (!req.user.isEmailVerified) {
@@ -65,8 +65,7 @@ const createOrder = asyncHandler(async (req, res) => {
         }
 
         const shippingFee = paymentMethod === "cod" ? 50 : 0;
-        const tax = Math.round(totalSellingPrice * 0.18);
-        const finalTotal = totalSellingPrice + tax + shippingFee;
+        const finalTotal = totalSellingPrice + shippingFee;
 
         const orderId = `ORD-${Date.now()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
 
@@ -76,7 +75,6 @@ const createOrder = asyncHandler(async (req, res) => {
             orderItems,
             totalMRP,
             totalSellingPrice,
-            tax,
             shippingFee,
             finalTotal,
             shippingAddress,
@@ -90,9 +88,14 @@ const createOrder = asyncHandler(async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        // Asynchronously dispatch order confirmation receipt email
+        // Asynchronously dispatch order confirmation receipt email to buyer
         sendOrderConfirmationEmail({ order, user: req.user }).catch(err => {
             console.error(`[Email Service] Failed to send initial order confirmation email for #${order.orderId}:`, err);
+        });
+
+        // Asynchronously dispatch new order notification email to admin
+        sendAdminNewOrderNotificationEmail({ order, user: req.user }).catch(err => {
+            console.error(`[Email Service] Failed to send admin new order notification email for #${order.orderId}:`, err);
         });
 
         return res
@@ -142,82 +145,95 @@ const getAllOrders = asyncHandler(async (req, res) => {
 
 const updateOrderStatus = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
-    const { status } = req.body;
+    const { status, message } = req.body;
 
-    const order = await Order.findById(orderId).populate("user", "fullName email");
+    let order;
+    if (mongoose.Types.ObjectId.isValid(orderId)) {
+        order = await Order.findById(orderId).populate("user", "fullName email");
+    }
+    if (!order) {
+        order = await Order.findOne({ orderId }).populate("user", "fullName email");
+    }
 
     if (!order) {
         throw new ApiError(404, "Order not found");
     }
 
-    if (order.orderStatus === "Delivered") {
-        throw new ApiError(400, "You have already delivered this order");
+    if (message === undefined || message.trim() === "") {
+        throw new ApiError(400, "A status message is mandatory for order updates.");
     }
+    
+    order.message = message.trim();
 
-    // Restock inventory atomically if order is cancelled
-    if (status === "Cancelled" && order.orderStatus !== "Cancelled") {
-        for (const item of order.orderItems) {
-            await Product.findByIdAndUpdate(item.product, {
-                $inc: {
-                    stock: item.quantity,
-                    salesCount: -item.quantity
-                }
-            });
+    if (status && status !== order.orderStatus) {
+        if (order.orderStatus === "Delivered" && status !== "Delivered") {
+            throw new ApiError(400, "You have already delivered this order");
         }
-    } else if (order.orderStatus === "Cancelled" && status !== "Cancelled") {
-        for (const item of order.orderItems) {
-            const updatedProduct = await Product.findOneAndUpdate(
-                { _id: item.product, stock: { $gte: item.quantity } },
-                {
+
+        // Restock inventory atomically if order is cancelled
+        if (status === "Cancelled" && order.orderStatus !== "Cancelled") {
+            for (const item of order.orderItems) {
+                await Product.findByIdAndUpdate(item.product, {
                     $inc: {
-                        stock: -item.quantity,
-                        salesCount: item.quantity
+                        stock: item.quantity,
+                        salesCount: -item.quantity
                     }
-                },
-                { returnDocument: true }
-            );
-            if (!updatedProduct) {
-                throw new ApiError(400, `Cannot update order status. Product stock insufficient.`);
+                });
+            }
+        } else if (order.orderStatus === "Cancelled" && status !== "Cancelled") {
+            for (const item of order.orderItems) {
+                const updatedProduct = await Product.findOneAndUpdate(
+                    { _id: item.product, stock: { $gte: item.quantity } },
+                    {
+                        $inc: {
+                            stock: -item.quantity,
+                            salesCount: item.quantity
+                        }
+                    },
+                    { returnDocument: true }
+                );
+                if (!updatedProduct) {
+                    throw new ApiError(400, `Cannot update order status. Product stock insufficient.`);
+                }
             }
         }
-    }
 
-    order.orderStatus = status;
+        order.orderStatus = status;
 
-    if (status === "Delivered") {
-        order.deliveredAt = Date.now();
-        if (order.paymentMethod === "cod") {
-            order.paymentStatus = "Paid";
+        if (status === "Delivered") {
+            order.deliveredAt = Date.now();
+            if (order.paymentMethod === "cod") {
+                order.paymentStatus = "Paid";
+            }
         }
     }
 
     await order.save({ validateBeforeSave: false });
 
     if (order.user && order.user.email) {
-        sendOrderStatusEmail({ order, user: order.user, newStatus: status }).catch(err => {
+        sendOrderStatusEmail({ order, user: order.user, newStatus: order.orderStatus }).catch(err => {
             console.error(`[Email Service] Error sending order status update email for Order #${order.orderId}:`, err);
         });
     }
 
     return res
         .status(200)
-        .json(new ApiResponse(200, order, `Order status updated to ${status}`));
+        .json(new ApiResponse(200, order, `Order updated successfully`));
 });
 
 const getOrderById = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
 
-    const order = await Order.findById(orderId).populate("user", "fullName email avatar");
+    let order;
+    if (mongoose.Types.ObjectId.isValid(orderId)) {
+        order = await Order.findById(orderId).populate("user", "fullName email avatar");
+    }
+    if (!order) {
+        order = await Order.findOne({ orderId }).populate("user", "fullName email avatar");
+    }
 
     if (!order) {
         throw new ApiError(404, "Order not found");
-    }
-
-    const ownerIdStr = order.user?._id ? order.user._id.toString() : order.user?.toString();
-    const reqUserIdStr = req.user?._id ? req.user._id.toString() : '';
-
-    if (ownerIdStr !== reqUserIdStr && req.user?.role !== 'admin') {
-        throw new ApiError(403, "You are not authorized to view this order");
     }
 
     return res
@@ -225,38 +241,4 @@ const getOrderById = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, order, "Order details fetched successfully"));
 });
 
-const cancelMyOrder = asyncHandler(async (req, res) => {
-    const { orderId } = req.params;
-
-    const order = await Order.findById(orderId);
-
-    if (!order) {
-        throw new ApiError(404, "Order not found");
-    }
-
-    if (order.user.toString() !== req.user._id.toString()) {
-        throw new ApiError(403, "You are not authorized to cancel this order");
-    }
-
-    if (order.orderStatus !== "Processing") {
-        throw new ApiError(400, "Only orders in 'Processing' status can be cancelled");
-    }
-
-    for (const item of order.orderItems) {
-        await Product.findByIdAndUpdate(item.product, {
-            $inc: {
-                stock: item.quantity,
-                salesCount: -item.quantity
-            }
-        });
-    }
-
-    order.orderStatus = "Cancelled";
-    await order.save({ validateBeforeSave: false });
-
-    return res
-        .status(200)
-        .json(new ApiResponse(200, order, "Order cancelled successfully"));
-});
-
-export { createOrder, getOrders, getAllOrders, updateOrderStatus, getOrderById, cancelMyOrder };
+export { createOrder, getOrders, getAllOrders, updateOrderStatus, getOrderById };

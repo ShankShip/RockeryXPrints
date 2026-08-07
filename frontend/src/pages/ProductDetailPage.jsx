@@ -185,10 +185,10 @@ export default function ProductDetailPage() {
             );
           }
 
-          // Fetch related products strictly matching the FIRST searchTag
-          const firstSearchTag = Array.isArray(data.searchTags) && data.searchTags.length > 0
-            ? data.searchTags[0].toLowerCase().trim()
-            : null;
+          // Weighted scoring algorithm for related products: name > tags > category
+          const nameTokens = data.name ? data.name.toLowerCase().split(/\s+/).filter(w => w.length > 2) : [];
+          const currentTags = Array.isArray(data.searchTags) ? data.searchTags.map(t => t.toLowerCase().trim()) : [];
+          const currentCategoryId = data.category?._id || data.category;
 
           getProducts()
             .then((pRes) => {
@@ -196,22 +196,46 @@ export default function ProductDetailPage() {
               if (Array.isArray(allProds)) {
                 const otherProds = allProds.filter((p) => p.slug !== slug);
 
-                let matched = [];
-                if (firstSearchTag) {
-                  // Filter products that contain the current product's first searchTag
-                  matched = otherProds.filter((p) => {
-                    const pTags = Array.isArray(p.searchTags) ? p.searchTags.map((t) => t.toLowerCase().trim()) : [];
-                    return pTags.includes(firstSearchTag);
-                  });
-                }
+                const scoredProds = otherProds.map(p => {
+                  let score = 0;
+                  
+                  // 1. Nearby names (word overlap) (+10 pts per matching word)
+                  if (p.name) {
+                    const pNameTokens = p.name.toLowerCase().split(/\s+/);
+                    let nameMatches = 0;
+                    for (const token of nameTokens) {
+                      if (pNameTokens.some(pt => pt.includes(token) || token.includes(pt))) {
+                        nameMatches++;
+                      }
+                    }
+                    score += nameMatches * 10;
+                  }
 
-                // If fewer than 4 items match the first searchTag, fill remaining slots with fallback items
-                if (matched.length < 4) {
-                  const remaining = otherProds.filter((p) => !matched.some((m) => m._id === p._id));
-                  matched = [...matched, ...remaining];
-                }
+                  // 2. Search tags overlap (+5 pts per matching tag)
+                  if (Array.isArray(p.searchTags)) {
+                    let tagMatches = 0;
+                    const pTags = p.searchTags.map(t => t.toLowerCase().trim());
+                    for (const tag of currentTags) {
+                      if (pTags.includes(tag)) tagMatches++;
+                    }
+                    score += tagMatches * 5;
+                  }
 
-                setRelatedProducts(matched.slice(0, 4));
+                  // 3. Category match (+2 pts)
+                  const pCategoryId = p.category?._id || p.category;
+                  if (currentCategoryId && pCategoryId && String(currentCategoryId) === String(pCategoryId)) {
+                    score += 2;
+                  }
+
+                  return { product: p, score };
+                });
+
+                // Sort by score descending
+                scoredProds.sort((a, b) => b.score - a.score);
+
+                // Take top 10 matching products
+                const matched = scoredProds.map(sp => sp.product);
+                setRelatedProducts(matched.slice(0, 10));
               }
             })
             .catch(() => {});
@@ -947,8 +971,13 @@ export default function ProductDetailPage() {
                 </Link>
               </div>
 
-              <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <style>{`.scrollbar-none::-webkit-scrollbar { display: none; }`}</style>
+              <div className="flex gap-6 overflow-x-auto pb-6 brutalist-scrollbar snap-x snap-mandatory">
+                <style>{`
+                  .brutalist-scrollbar::-webkit-scrollbar { height: 10px; }
+                  .brutalist-scrollbar::-webkit-scrollbar-track { background: #f0f0f0; border: 2px solid #000; }
+                  .brutalist-scrollbar::-webkit-scrollbar-thumb { background: #000; border: 1px solid #000; }
+                  .brutalist-scrollbar::-webkit-scrollbar-thumb:hover { background: #222; }
+                `}</style>
                 {relatedProducts.map((relProd, idx) => (
                   <motion.div
                     key={relProd._id || idx}
@@ -957,7 +986,7 @@ export default function ProductDetailPage() {
                     viewport={{ once: true, margin: '-40px' }}
                     transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: idx * 0.08 }}
                     onClick={() => navigate(`/products/${relProd.slug}`)}
-                    className="border-2 border-black bg-white p-4 flex flex-col justify-between group hover:shadow-solid cursor-pointer transition-all duration-150 shrink-0 w-64 sm:w-auto"
+                    className="border-2 border-black bg-white p-4 flex flex-col justify-between group hover:shadow-solid cursor-pointer transition-all duration-150 shrink-0 w-[280px] snap-start"
                   >
                     <div>
                       <div className="w-full aspect-3/4 bg-neutral-100 border-2 border-black relative mb-4 overflow-hidden flex items-center justify-center">

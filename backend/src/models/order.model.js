@@ -46,17 +46,27 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    tax: {
-        type: Number,
-        default: 0
-    },
     shippingFee: {
-        type: Number,
-        default: 0
+      type: Number,
+      required: true,
+      default: 0
     },
     finalTotal: {
         type: Number,
         required: true
+    },
+    // Razorpay Integration Prep
+    razorpayOrderId: {
+        type: String,
+        default: null
+    },
+    razorpayPaymentId: {
+        type: String,
+        default: null
+    },
+    razorpaySignature: {
+        type: String,
+        default: null
     },
 
     shippingAddress: {
@@ -90,6 +100,10 @@ const orderSchema = new mongoose.Schema({
 
     deliveredAt: {
         type: Date
+    },
+    message: {
+        type: String,
+        default: ""
     }
 }, { timestamps: true })
 

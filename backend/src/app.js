@@ -10,6 +10,9 @@ import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
 
+// Trust proxy for rate limiting behind a reverse proxy (e.g., Render)
+app.set('trust proxy', 1)
+
 // Security Headers
 app.use(helmet())
 
@@ -39,11 +42,18 @@ app.use(cors({
     credentials: true
 }))
 
-app.use(express.json({limit: "16kb"}))
-app.use(express.urlencoded({extended: true, limit: "16kb"}))
+app.use(express.json({ limit: "16kb" }))
+app.use(express.urlencoded({ extended: true, limit: "16kb" }))
 
 // Sanitize data against NoSQL Injection and XSS
-app.use(mongoSanitize())
+app.use((req, res, next) => {
+    ['body', 'params', 'headers', 'query'].forEach((key) => {
+        if (req[key]) {
+            mongoSanitize.sanitize(req[key]);
+        }
+    });
+    next();
+});
 app.use(xssClean)
 
 app.use(express.static("public"))

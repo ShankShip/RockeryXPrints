@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ChevronDown } from 'lucide-react';
 import { removeFromCart, clearCart, updateQuantity } from '../store/cartSlice';
-import { createOrder } from '../services/api';
+import { createOrder, initiateOrderAPI, verifyOrderAPI } from '../services/api';
 
 import Navbar from '../components/landing/Navbar';
 import EmailVerificationModal from '../components/cart/EmailVerificationModal';
@@ -14,6 +14,17 @@ import { INDIAN_STATES } from '../utils/constants';
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 
 const STEPS = ['CART', 'SHIP', 'CONFIRM'];
+
+// ── Load Razorpay checkout script lazily ─────────────────────────────────────
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 
 // Single form field
 const Field = ({ label, id, type = 'text', value, onChange, required, placeholder }) => (
@@ -129,15 +140,8 @@ export default function CartPage() {
     }
   };
 
-  const handleConfirm = () => {
-    if (!user) {
-      navigate('/auth?redirect=/cart');
-      return;
-    }
-    if (!user.isEmailVerified) {
-      setShowVerificationModal(true);
-      return;
-    }
+  // ── COD handler ─────────────────────────────────────────────────────────────
+  const handleCODOrder = () => {
     setSubmittingOrder(true);
     setOrderError('');
     createOrder({
@@ -149,7 +153,7 @@ export default function CartPage() {
         country: 'INDIA',
         phone: address.phone
       },
-      paymentMethod
+      paymentMethod: 'cod'
     })
     .then((res) => {
       const order = res.data?.data;
@@ -166,9 +170,120 @@ export default function CartPage() {
         setOrderError(err.response?.data?.message || 'FAILED TO PLACE ORDER. PLEASE TRY AGAIN.');
       }
     })
-    .finally(() => {
+    .finally(() => setSubmittingOrder(false));
+  };
+
+  // ── Online (Razorpay) handler ────────────────────────────────────────────────
+  const handleOnlineOrder = async () => {
+    setSubmittingOrder(true);
+    setOrderError('');
+
+    try {
+      // 1. Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setOrderError('FAILED TO LOAD PAYMENT GATEWAY. CHECK YOUR INTERNET CONNECTION.');
+        setSubmittingOrder(false);
+        return;
+      }
+
+      // 2. Create a Razorpay order on our backend
+      const initiateRes = await initiateOrderAPI({
+        shippingAddress: {
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          zipCode: Number(address.zipCode),
+          country: 'INDIA',
+          phone: address.phone
+        }
+      });
+
+      const { razorpayOrderId, amount, currency } = initiateRes.data?.data;
+
+      // 3. Open Razorpay checkout dialog
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount,
+        currency,
+        name: 'RockeryXPrints',
+        description: 'Art Print Purchase',
+        order_id: razorpayOrderId,
+        prefill: {
+          name: user?.fullName || '',
+          email: user?.email || '',
+          contact: address.phone || '',
+        },
+        theme: { color: '#000000' },
+        handler: async (response) => {
+          // 4. Verify payment on backend
+          try {
+            const verifyRes = await verifyOrderAPI({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+
+            const order = verifyRes.data?.data;
+            if (order) {
+              setConfirmedOrder(order);
+              dispatch(clearCart());
+              setOrderPlaced(true);
+            }
+          } catch (err) {
+            setOrderError(
+              err.response?.data?.message ||
+              'PAYMENT RECEIVED BUT ORDER CONFIRMATION FAILED. PLEASE CONTACT SUPPORT WITH YOUR PAYMENT ID: ' + response.razorpay_payment_id
+            );
+          } finally {
+            setSubmittingOrder(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            // User closed the dialog without paying
+            setOrderError('PAYMENT CANCELLED. YOUR CART HAS NOT BEEN CHARGED. YOU CAN TRY AGAIN.');
+            setSubmittingOrder(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+
+      rzp.on('payment.failed', (response) => {
+        setOrderError(`PAYMENT FAILED: ${response.error?.description || 'Unknown error'}.`);
+        setSubmittingOrder(false);
+        rzp.close();
+      });
+
+      rzp.open();
+
+    } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.errors === "EMAIL_NOT_VERIFIED") {
+        setShowVerificationModal(true);
+      } else {
+        setOrderError(err.response?.data?.message || 'FAILED TO INITIATE PAYMENT. PLEASE TRY AGAIN.');
+      }
       setSubmittingOrder(false);
-    });
+    }
+  };
+
+  // ── Unified confirm handler ──────────────────────────────────────────────────
+  const handleConfirm = () => {
+    if (!user) {
+      navigate('/auth?redirect=/cart');
+      return;
+    }
+    if (!user.isEmailVerified) {
+      setShowVerificationModal(true);
+      return;
+    }
+
+    if (paymentMethod === 'cod') {
+      handleCODOrder();
+    } else {
+      handleOnlineOrder();
+    }
   };
 
   /* ── ORDER CONFIRMED ── */
@@ -549,7 +664,12 @@ export default function CartPage() {
                     transition={spring}
                     className="flex-1 flex items-center justify-center gap-2 bg-black text-white font-space font-bold uppercase text-sm px-8 py-4 border-2 border-black shadow-solid hover:bg-white hover:text-black transition-colors duration-75 touch-manipulation cursor-pointer disabled:opacity-50"
                   >
-                    {submittingOrder ? 'PLACING ORDER...' : <>PLACE ORDER <ArrowRight size={16} /></>}
+                    {submittingOrder
+                      ? 'PROCESSING...'
+                      : paymentMethod === 'online'
+                        ? <> PAY ₹{finalTotal.toLocaleString('en-IN')} <ArrowRight size={16} /></>
+                        : <> PLACE COD ORDER <ArrowRight size={16} /></>
+                    }
                   </motion.button>
                 </div>
               </motion.div>
@@ -572,7 +692,7 @@ export default function CartPage() {
                 <span className="font-space font-black text-3xl">₹{finalTotal.toLocaleString('en-IN')}</span>
               </div>
               <div className="mt-5 font-space text-[10px] text-neutral-400 uppercase tracking-wider border-t border-neutral-700 pt-4">
-                Secured payment · Free returns 7 days
+                Secured payment via Razorpay · Free returns 7 days
               </div>
             </div>
           </div>

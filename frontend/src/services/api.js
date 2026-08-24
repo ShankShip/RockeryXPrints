@@ -110,7 +110,9 @@ export const getProductReviewsAPI = (productId) => api.get(`/prods/products/${pr
 export const deleteReviewAPI = (reviewId) => api.delete(`/prods/reviews/${reviewId}`);
 
 // ─── Orders ────────────────────────────────────────────────────────────────
-export const createOrder = (data) => api.post('/orders/create', data);
+export const initiateOrderAPI = (data) => api.post('/orders/initiate', data);
+export const verifyOrderAPI = (data) => api.post('/orders/verify', data);
+export const createOrder = (data) => api.post('/orders/create', data); // COD only
 export const getOrders = () => api.get('/orders/get-orders');
 export const getOrderByIdAPI = (orderId) => api.get(`/orders/${orderId}`);
 

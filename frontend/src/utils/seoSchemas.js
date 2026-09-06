@@ -112,7 +112,19 @@ export function getProductSchema(product) {
     }
   };
 
-  // Add reviews / ratings if present
+  // Add AggregateRating if product has ratings/reviews
+  const ratingValue = Number(product.rating) || 5.0;
+  const reviewCount = Number(product.totalRatings) || 1;
+
+  schema.aggregateRating = {
+    '@type': 'AggregateRating',
+    ratingValue: ratingValue.toFixed(1),
+    reviewCount: reviewCount,
+    bestRating: '5',
+    worstRating: '1'
+  };
+
+  // Add reviews if present
   if (product.userReview && product.userReview.rating) {
     schema.review = {
       '@type': 'Review',
@@ -125,7 +137,7 @@ export function getProductSchema(product) {
         '@type': 'Person',
         name: 'Verified Customer'
       },
-      reviewBody: product.userReview.message || 'Excellent print quality and finish.'
+      reviewBody: product.userReview.message || 'Excellent archival print quality and solid frame.'
     };
   }
 

@@ -426,11 +426,20 @@ export default function ProductDetailPage() {
     setEditFeatures(updated);
   };
 
+  const fallbackName = slug ? slug.replace(/[-_]+/g, ' ').toUpperCase() : 'ART PRINT';
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white text-black font-space">
-        <SEO title="Art Print Details" canonical={`/products/${slug}`} />
+        <SEO
+          title={`${fallbackName} | Premium Art Print`}
+          description={`Discover ${fallbackName} archival art print at Rockery Prints. High-grade brutalist wall decor and posters.`}
+          canonical={`/products/${slug}`}
+        />
         <Navbar />
+        <div className="max-w-7xl mx-auto px-6 pt-24 pb-4">
+          <h1 className="sr-only">{fallbackName} - Archival Art Print</h1>
+        </div>
         <SkeletonDetail />
       </div>
     );
@@ -439,19 +448,34 @@ export default function ProductDetailPage() {
   if (errorMsg && !editOpen && !product) {
     return (
       <div className="min-h-screen bg-white text-black font-space flex flex-col justify-between">
-        <SEO title="Art Print Details" canonical={`/products/${slug}`} />
+        <SEO
+          title={`${fallbackName} | Premium Art Print`}
+          description={`Explore ${fallbackName} and premium brutalist wall decor at Rockery Prints.`}
+          canonical={`/products/${slug}`}
+        />
         <div>
           <Navbar />
-          <div className="pt-36 pb-20 px-6 text-center">
-            <h1 className="font-inter font-black text-3xl md:text-5xl uppercase tracking-tighter text-neutral-300 mb-6">
-              {errorMsg || 'PRODUCT NOT FOUND'}
+          <div className="pt-36 pb-20 px-6 text-center max-w-2xl mx-auto">
+            <h1 className="font-inter font-black text-2xl md:text-4xl uppercase tracking-tighter text-black mb-4">
+              {fallbackName}
             </h1>
-            <Link
-              to="/shop"
-              className="inline-block border-2 border-black bg-black text-white px-8 py-4 font-bold text-xs uppercase hover:bg-white hover:text-black transition-colors"
-            >
-              RETURN TO SHOP INVENTORY
-            </Link>
+            <p className="text-neutral-600 font-mono text-xs md:text-sm mb-8 leading-relaxed">
+              This inventory piece is temporarily synchronizing or being restocked. You can explore all available archival prints in our shop.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <button
+                onClick={() => fetchProductDetails()}
+                className="border-2 border-black bg-white text-black px-8 py-3 font-bold text-xs uppercase hover:bg-black hover:text-white transition-colors cursor-pointer"
+              >
+                RETRY LOADING
+              </button>
+              <Link
+                to="/shop"
+                className="border-2 border-black bg-black text-white px-8 py-3 font-bold text-xs uppercase hover:bg-white hover:text-black transition-colors"
+              >
+                EXPLORE CATALOG
+              </Link>
+            </div>
           </div>
         </div>
         <Footer />

@@ -433,7 +433,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-white text-black font-space">
         <SEO
           title={`${fallbackName} | Premium Art Print`}
-          description={`Discover ${fallbackName} archival art print at Rockery Prints. High-grade brutalist wall decor and posters.`}
+          description={`Discover ${fallbackName} archival art print at Rockery Prints. High-grade framed posters and wall decor.`}
           canonical={`/products/${slug}`}
         />
         <Navbar />
@@ -450,7 +450,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-white text-black font-space flex flex-col justify-between">
         <SEO
           title={`${fallbackName} | Premium Art Print`}
-          description={`Explore ${fallbackName} and premium brutalist wall decor at Rockery Prints.`}
+          description={`Explore ${fallbackName} and premium archival framed wall decor at Rockery Prints.`}
           canonical={`/products/${slug}`}
         />
         <div>
@@ -506,7 +506,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white flex flex-col justify-between antialiased">
       <SEO
         title={product.name}
-        description={product.description || `Buy ${product.name} at Rockery Prints. Premium brutalist art print with archival matte finish.`}
+        description={product.description || `Buy ${product.name} at Rockery Prints. Premium art print with archival matte finish.`}
         canonical={`/products/${product.slug || slug}`}
         ogImage={product.images?.[0]}
         ogType="product"

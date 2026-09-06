@@ -733,7 +733,7 @@ function ProfileTab({ user, onUpdateDetails }) {
                     <label className="text-[10px] font-bold uppercase">STREET ADDRESS *</label>
                     <input
                       type="text" required value={street} onChange={(e) => setStreet(e.target.value)}
-                      placeholder="12/B Brutalist Avenue, Apartment / Suite" style={{ fontSize: '16px' }}
+                      placeholder="12/B Heritage Avenue, Apartment / Suite" style={{ fontSize: '16px' }}
                       className="w-full bg-white border-2 border-black px-3 py-2.5 text-xs font-bold focus:outline-none"
                     />
                   </div>

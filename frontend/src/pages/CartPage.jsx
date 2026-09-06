@@ -535,7 +535,7 @@ export default function CartPage() {
                       transition={spring}
                       className="space-y-6"
                     >
-                      <Field label="STREET ADDRESS" id="street" value={address.street} onChange={setAddr('street')} required placeholder="44 BRUTALIST LANE" />
+                      <Field label="STREET ADDRESS" id="street" value={address.street} onChange={setAddr('street')} required placeholder="44 CONNAUGHT PLACE" />
 
                       {/* Two-col on md+ */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -621,7 +621,7 @@ export default function CartPage() {
                 <div className="border-2 border-black p-4 font-space text-[10px] md:text-xs mb-5">
                   <div className="font-bold uppercase tracking-wider mb-2 text-neutral-500">SHIPPING ADDRESS</div>
                   <div className="uppercase leading-relaxed text-[10px] md:text-xs">
-                    {address.street || '44 BRUTALIST LANE'}, {address.city || 'NEW DELHI'}, {address.state || 'DELHI'} — {address.zipCode || '110001'}<br />
+                    {address.street || '44 CONNAUGHT PLACE'}, {address.city || 'NEW DELHI'}, {address.state || 'DELHI'} — {address.zipCode || '110001'}<br />
                     {address.country || 'INDIA'} · {address.phone || '+91 98765 43210'}
                   </div>
                 </div>

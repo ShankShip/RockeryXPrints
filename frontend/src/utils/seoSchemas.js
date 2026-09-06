@@ -13,7 +13,7 @@ export function getOrganizationSchema() {
     name: 'Rockery Prints',
     url: BASE_URL,
     logo: `${BASE_URL}/favicon.png`,
-    description: 'Premium brutalist-inspired art prints, high-grade archival posters, and exclusive pop-culture merchandise.',
+    description: 'Premium archival art prints, high-grade framed posters, and exclusive pop-culture merchandise.',
     priceRange: '₹₹',
     currenciesAccepted: 'INR',
     paymentAccepted: 'UPI, Credit Card, Debit Card, Net Banking',
@@ -40,7 +40,7 @@ export function getLocalBusinessSchema() {
     url: BASE_URL,
     logo: `${BASE_URL}/favicon.png`,
     image: `${BASE_URL}/og-banner.png`,
-    description: 'Specialist studio for brutalist framed art prints, anime posters, and collectible wall art.',
+    description: 'Specialist studio for archival framed art prints, anime posters, and collectible wall art.',
     priceRange: '₹399 - ₹1299',
     currenciesAccepted: 'INR',
     address: {

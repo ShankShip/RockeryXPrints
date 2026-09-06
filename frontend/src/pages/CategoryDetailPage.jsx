@@ -440,8 +440,8 @@ export default function CategoryDetailPage() {
       <SEO
         title={category?.name ? `${category.name} Art Prints & Merch` : 'Category Art Prints'}
         description={category?.name
-          ? `Explore exclusive ${category.name} brutalist art prints, high-grade posters, and archival wall decor at Rockery Prints.`
-          : 'Explore exclusive brutalist art prints and posters at Rockery Prints.'}
+          ? `Explore exclusive ${category.name} art prints, high-grade framed posters, and archival wall decor at Rockery Prints.`
+          : 'Explore exclusive archival art prints and framed posters at Rockery Prints.'}
         canonical={`/category/${categorySlug}`}
         ogImage={category?.coverImage}
         jsonLd={getBreadcrumbSchema(breadcrumbs)}

@@ -292,7 +292,7 @@ export default function CollectionsPage() {
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white flex flex-col justify-between antialiased">
       <SEO
         title="Curated Art Collections & Series"
-        description="Discover themed brutalist art collections, limited edition drops, and curated pop-culture poster series at Rockery Prints."
+        description="Discover themed archival art collections, limited edition drops, and curated pop-culture poster series at Rockery Prints."
         canonical="/collections"
         jsonLd={getBreadcrumbSchema(breadcrumbs)}
       />

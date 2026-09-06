@@ -133,7 +133,7 @@ export default function CategoriesPage() {
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white overflow-x-hidden">
       <SEO
         title="Fandom Categories & Art Archives"
-        description="Explore curated brutalist art categories and fandom archives at Rockery Prints. Discover posters, frames, and merchandise organized by anime, gaming, and cinematic universes."
+        description="Explore curated art categories and fandom archives at Rockery Prints. Discover posters, frames, and merchandise organized by anime, gaming, and cinematic universes."
         canonical="/categories"
         jsonLd={getBreadcrumbSchema(breadcrumbs)}
       />

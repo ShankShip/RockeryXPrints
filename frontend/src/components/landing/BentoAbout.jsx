@@ -163,7 +163,7 @@ export default function BentoAbout() {
               CURATOR MANUAL & ARCHIVAL SPECIFICATIONS
             </span>
             <h2 className="font-inter font-black text-3xl md:text-5xl uppercase tracking-tighter text-black">
-              PREMIUM BRUTALIST ART PRINTS & FRAMED POSTERS
+              PREMIUM ARCHIVAL ART PRINTS & FRAMED POSTERS
             </h2>
           </div>
 
@@ -206,7 +206,7 @@ export default function BentoAbout() {
                   What makes Rockery Prints different from ordinary wall posters?
                 </h4>
                 <p className="text-neutral-600 leading-relaxed">
-                  Unlike thin commercial paper prints, Rockery Prints specializes in brutalist aesthetic posters and fandom wall decor printed with archival pigment inks. Every piece arrives fully assembled with pre-installed hanging hardware, ready to mount immediately out of the box.
+                  Unlike thin commercial paper prints, Rockery Prints specializes in premium archival posters and fandom wall decor printed with archival pigment inks. Every piece arrives fully assembled with pre-installed hanging hardware, ready to mount immediately out of the box.
                 </p>
               </div>
 

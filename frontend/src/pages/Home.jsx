@@ -49,8 +49,8 @@ export default function Home() {
   return (
     <div id="home" className="min-h-screen bg-white text-black font-space selection:bg-black selection:text-white overflow-x-hidden antialiased">
       <SEO
-        title="Brutalist Art Prints & Posters"
-        description="Discover premium brutalist-inspired art prints, high-grade posters, archival frames, and exclusive fandom merchandise crafted for modern aesthetic spaces."
+        title="Art Prints & Framed Posters"
+        description="Discover premium archival art prints, high-grade framed posters, and exclusive fandom merchandise crafted for modern aesthetic spaces."
         canonical="/"
         jsonLd={homeSchemas}
       />

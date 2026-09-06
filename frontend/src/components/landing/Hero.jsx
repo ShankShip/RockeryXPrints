@@ -165,7 +165,7 @@ export default function Hero({ products, loading }) {
           </span>
           <br />
           <span className="bg-black text-white px-3 py-1 inline-block mt-3">IN A BOX.</span>
-          <span className="sr-only"> - Brutalist Art Prints & Framed Posters</span>
+          <span className="sr-only"> - Archival Art Prints & Framed Posters</span>
         </motion.h1>
 
         {/* Body copy */}

@@ -6,7 +6,7 @@ import { useLocation } from 'react-router';
 const SITE_NAME = 'Rockery Prints';
 const BASE_URL = 'https://rockeryprints.in';
 const DEFAULT_DESCRIPTION =
-  'Discover premium brutalist-inspired art prints, high-grade posters, archival matte frames, and exclusive fandom merchandise crafted for modern aesthetics.';
+  'Discover premium archival art prints, high-grade framed posters, and exclusive fandom merchandise crafted for modern aesthetics.';
 const DEFAULT_IMAGE = `${BASE_URL}/og-banner.png`;
 
 export default function SEO({
@@ -27,12 +27,12 @@ export default function SEO({
     ? currentPath
     : `${BASE_URL}${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
 
-    // Format title
+  // Format title
   const fullTitle = title
     ? title.includes(SITE_NAME)
       ? title
       : `${title} | ${SITE_NAME}`
-    : `${SITE_NAME} | Brutalist Art Prints & Posters`;
+    : `${SITE_NAME} | Art Prints & Framed Posters`;
 
   // Parse JSON-LD (supports single object or array)
   const structuredDataList = Array.isArray(jsonLd)
@@ -44,7 +44,7 @@ export default function SEO({
   // Keywords string
   const keywordsContent = Array.isArray(keywords)
     ? keywords.join(', ')
-    : keywords || 'art prints, brutalist design, graphic posters, anime prints, gaming merch, wall decor, archival prints, rockery prints';
+    : keywords || 'art prints, framed posters, graphic posters, anime prints, gaming merch, wall decor, archival prints, rockery prints';
 
   return (
     <Helmet>

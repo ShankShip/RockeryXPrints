@@ -237,13 +237,13 @@ export default function ShopPage() {
 
   const pageTitle = activeTag !== 'all'
     ? `${activeTag.toUpperCase()} Prints`
-    : 'Shop All Brutalist Art Prints & Apparel';
+    : 'Shop All Art Prints & Posters';
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white overflow-x-hidden">
       <SEO
         title={pageTitle}
-        description="Browse our complete catalog of brutalist art prints, high-grade posters, archival canvases, and pop-culture tributes. Filter by category, price, and popularity."
+        description="Browse our complete catalog of archival art prints, high-grade framed posters, and pop-culture tributes. Filter by category, price, and popularity."
         canonical="/shop"
         jsonLd={getBreadcrumbSchema(shopBreadcrumbs)}
       />

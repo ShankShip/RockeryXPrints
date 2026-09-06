@@ -154,6 +154,83 @@ export default function BentoAbout() {
           BRAND PHILOSOPHY · EST. 2026
         </p>
       </div>
+
+      {/* ── Archival Craft & Studio FAQ (On-Page SEO Rich Content) ── */}
+      <div className="border-t-4 border-black bg-neutral-50 px-6 py-16 md:px-12 lg:px-20 text-black">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-10 text-center md:text-left">
+            <span className="font-space text-xs font-bold uppercase tracking-[0.25em] text-neutral-500 block mb-2">
+              CURATOR MANUAL & ARCHIVAL SPECIFICATIONS
+            </span>
+            <h2 className="font-inter font-black text-3xl md:text-5xl uppercase tracking-tighter text-black">
+              PREMIUM BRUTALIST ART PRINTS & FRAMED POSTERS
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 font-space text-xs md:text-sm leading-relaxed text-neutral-700">
+            <div className="border-2 border-black bg-white p-6 shadow-solid-sm">
+              <h3 className="font-bold text-black uppercase tracking-wider mb-2 text-sm border-b-2 border-black pb-2">
+                MUSEUM-GRADE PAPER
+              </h3>
+              <p>
+                Every art print is produced on 300 GSM heavyweight archival matte paper. Engineered to resist UV fading and yellowing, our acid-free paper stock ensures deep monochrome blacks and crisp typography for decades.
+              </p>
+            </div>
+
+            <div className="border-2 border-black bg-white p-6 shadow-solid-sm">
+              <h3 className="font-bold text-black uppercase tracking-wider mb-2 text-sm border-b-2 border-black pb-2">
+                20MM SOLID WOOD FRAMES
+              </h3>
+              <p>
+                Handcrafted using sustainable hardwood with a satin matte black finish. Each frame includes 3mm shatter-resistant gallery-grade acrylic glass for superior clarity, dust protection, and long-term durability.
+              </p>
+            </div>
+
+            <div className="border-2 border-black bg-white p-6 shadow-solid-sm">
+              <h3 className="font-bold text-black uppercase tracking-wider mb-2 text-sm border-b-2 border-black pb-2">
+                RIGID FLAT PACKAGING
+              </h3>
+              <p>
+                We never roll posters in cheap cardboard tubes. Every framed artwork is sealed in protective corner guards, moisture-resistant shrink wrap, and a multi-layered corrugated rigid mailer box for zero transit damage.
+              </p>
+            </div>
+          </div>
+
+          <div className="border-2 border-black bg-white p-6 md:p-8">
+            <h3 className="font-space font-bold uppercase tracking-widest text-xs text-neutral-500 mb-6">
+              FREQUENTLY ASKED COLLECTOR QUESTIONS
+            </h3>
+            <div className="space-y-6 font-space text-xs md:text-sm divide-y-2 divide-neutral-100">
+              <div className="pt-4 first:pt-0">
+                <h4 className="font-bold uppercase text-black mb-1">
+                  What makes Rockery Prints different from ordinary wall posters?
+                </h4>
+                <p className="text-neutral-600 leading-relaxed">
+                  Unlike thin commercial paper prints, Rockery Prints specializes in brutalist aesthetic posters and fandom wall decor printed with archival pigment inks. Every piece arrives fully assembled with pre-installed hanging hardware, ready to mount immediately out of the box.
+                </p>
+              </div>
+
+              <div className="pt-4">
+                <h4 className="font-bold uppercase text-black mb-1">
+                  How long does shipping and delivery take across India?
+                </h4>
+                <p className="text-neutral-600 leading-relaxed">
+                  Orders are hand-assembled and dispatched within 2 to 4 business days. Standard delivery across major metro cities takes 3 to 6 business days with real-time end-to-end tracking provided via SMS and email.
+                </p>
+              </div>
+
+              <div className="pt-4">
+                <h4 className="font-bold uppercase text-black mb-1">
+                  Do you accept custom orders or specific fandom requests?
+                </h4>
+                <p className="text-neutral-600 leading-relaxed">
+                  Yes! We regularly curate custom collections across cinema, anime, automotive culture, architecture, and music. Reach out directly to our studio team via WhatsApp or email to request custom artwork or bulk corporate decor orders.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

@@ -21,7 +21,7 @@ function shuffle(array) {
 }
 
 import SEO from '../components/common/SEO';
-import { getOrganizationSchema, getWebSiteSchema } from '../utils/seoSchemas';
+import { getOrganizationSchema, getWebSiteSchema, getLocalBusinessSchema } from '../utils/seoSchemas';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -44,12 +44,12 @@ export default function Home() {
   const heroProducts = products.slice(0, 3);
   const featuredProducts = products.slice(3, 7);
 
-  const homeSchemas = [getOrganizationSchema(), getWebSiteSchema()];
+  const homeSchemas = [getOrganizationSchema(), getWebSiteSchema(), getLocalBusinessSchema()];
 
   return (
     <div id="home" className="min-h-screen bg-white text-black font-space selection:bg-black selection:text-white overflow-x-hidden antialiased">
       <SEO
-        title="Premium Brutalist Art Prints, Posters & Fandom Merch"
+        title="Brutalist Art Prints & Posters"
         description="Discover premium brutalist-inspired art prints, high-grade posters, archival frames, and exclusive fandom merchandise crafted for modern aesthetic spaces."
         canonical="/"
         jsonLd={homeSchemas}

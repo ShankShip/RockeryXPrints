@@ -27,12 +27,12 @@ export default function SEO({
     ? currentPath
     : `${BASE_URL}${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
 
-  // Format title
+    // Format title
   const fullTitle = title
     ? title.includes(SITE_NAME)
       ? title
       : `${title} | ${SITE_NAME}`
-    : `${SITE_NAME} | Premium Brutalist Art Prints, Posters & Fandom Merch`;
+    : `${SITE_NAME} | Brutalist Art Prints & Posters`;
 
   // Parse JSON-LD (supports single object or array)
   const structuredDataList = Array.isArray(jsonLd)

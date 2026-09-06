@@ -255,7 +255,7 @@ export default function FeaturedProducts({ products, loading = false }) {
             COLLECTIBLE FRAME INVENTORY
           </span>
           <h2 className="font-inter font-black text-4xl md:text-6xl tracking-tighter uppercase leading-none">
-            INVENTORY
+            INVENTORY <span className="text-neutral-400 font-normal text-2xl md:text-4xl">/ ART PRINTS</span>
           </h2>
         </div>
         <Link to="/shop">

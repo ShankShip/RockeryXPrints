@@ -9,18 +9,43 @@ const BASE_URL = 'https://rockeryprints.in';
 export function getOrganizationSchema() {
   return {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': 'OnlineStore',
     name: 'Rockery Prints',
     url: BASE_URL,
     logo: `${BASE_URL}/favicon.png`,
-    description: 'Premium brutalist-inspired art prints, high-grade posters, and exclusive pop-culture merchandise.',
+    description: 'Premium brutalist-inspired art prints, high-grade archival posters, and exclusive pop-culture merchandise.',
+    priceRange: '₹₹',
+    currenciesAccepted: 'INR',
+    paymentAccepted: 'UPI, Credit Card, Debit Card, Net Banking',
     sameAs: [
-      'https://www.instagram.com/rockeryprints'
+      'https://www.instagram.com/rockeryxprints/'
     ],
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer support',
+      email: 'shankship01@gmail.com',
       url: `${BASE_URL}/return-policy`
+    }
+  };
+}
+
+/**
+ * Returns LocalBusiness schema for rich local and merchant trust indexing.
+ */
+export function getLocalBusinessSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: 'Rockery Prints',
+    url: BASE_URL,
+    logo: `${BASE_URL}/favicon.png`,
+    image: `${BASE_URL}/og-banner.png`,
+    description: 'Specialist studio for brutalist framed art prints, anime posters, and collectible wall art.',
+    priceRange: '₹399 - ₹1299',
+    currenciesAccepted: 'INR',
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'IN'
     }
   };
 }

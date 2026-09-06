@@ -206,11 +206,13 @@ export default function CollectionsShowcase() {
                 <div className="h-4 bg-neutral-800 w-full" />
               </div>
             )) : marqueeItems.map((col, idx) => {
+              const isClone = idx >= collections.length;
               const tagParam = col.searchTag || col.slug || col.name;
               return (
                 <div
                   key={`${col._id || idx}-${idx}`}
                   onClick={() => navigate(`/shop?tag=${encodeURIComponent(tagParam)}`)}
+                  aria-hidden={isClone ? 'true' : undefined}
                   className="group/card w-72 sm:w-80 border-2 border-neutral-800 hover:border-white bg-neutral-950 flex flex-col justify-between p-4 cursor-pointer transition-colors duration-150 shrink-0 relative overflow-hidden shadow-solid-sm"
                 >
                   {/* Image Matte with HoverMedia */}

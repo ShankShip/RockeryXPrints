@@ -429,6 +429,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white text-black font-space">
+        <SEO title="Art Print Details" canonical={`/products/${slug}`} />
         <Navbar />
         <SkeletonDetail />
       </div>
@@ -438,7 +439,7 @@ export default function ProductDetailPage() {
   if (errorMsg && !editOpen && !product) {
     return (
       <div className="min-h-screen bg-white text-black font-space flex flex-col justify-between">
-        <SEO noindex={true} title="Product Not Found" />
+        <SEO title="Art Print Details" canonical={`/products/${slug}`} />
         <div>
           <Navbar />
           <div className="pt-36 pb-20 px-6 text-center">

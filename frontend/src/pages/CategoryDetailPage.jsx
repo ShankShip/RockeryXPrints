@@ -11,6 +11,7 @@ import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
 import SEO from '../components/common/SEO';
 import { getBreadcrumbSchema } from '../utils/seoSchemas';
+import { getOptimizedImageUrl } from '../utils/imageUtils';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.35 };
 const ITEMS_PER_PAGE = 20;
@@ -149,28 +150,30 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
       onMouseLeave={handleMouseLeave}
       className="relative w-full h-full overflow-hidden flex items-center justify-center bg-black"
     >
-      {videoSrc ? (
+      {!isMobile && videoSrc ? (
         <video
           ref={videoRef}
           src={videoSrc}
           muted
           loop
           playsInline
-          autoPlay={isMobile}
+          preload="none"
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none z-0"
         />
       ) : null}
 
       {coverImage ? (
         <img
-          src={coverImage}
+          src={getOptimizedImageUrl(coverImage, { width: 600 })}
           alt={alt || 'Product Image'}
-          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${(isMobile || isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
+          loading="lazy"
+          decoding="async"
+          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${(!isMobile && isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
             }`}
         />
       ) : (
         <div
-          className={`w-full h-full flex items-center justify-center p-6 bg-stripes-light transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${(isMobile || isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
+          className={`w-full h-full flex items-center justify-center p-6 bg-stripes-light transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${(!isMobile && isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
             }`}
         >
           <div className="w-full h-full text-xs font-space text-neutral-400 flex items-center justify-center bg-neutral-100">NO IMAGE</div>
@@ -788,7 +791,7 @@ export default function CategoryDetailPage() {
                         key={product._id}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: '-40px' }}
+                        viewport={{ once: true, margin: '0px' }}
                         transition={{ ...spring, delay: (idx % 4) * 0.05 }}
                         whileHover={{ x: -4, y: -4, boxShadow: '6px 6px 0px 0px #000000' }}
                         className="bg-black border-2 border-black h-full flex flex-col group"

@@ -4,15 +4,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { getCollections } from '../../services/api';
+import { getOptimizedImageUrl } from '../../utils/imageUtils';
 
-
-function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
+function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg, isMobile }) {
   const videoRef = useRef(null);
   const [isCardHovered, setIsCardHovered] = useState(false);
 
   const videoSrc = hoverVideo || '';
 
   const handleMouseEnter = () => {
+    if (isMobile) return;
     setIsCardHovered(true);
     if (videoSrc && videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -21,6 +22,7 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
   };
 
   const handleMouseLeave = () => {
+    if (isMobile) return;
     setIsCardHovered(false);
     if (videoSrc && videoRef.current) {
       videoRef.current.pause();
@@ -33,29 +35,32 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
       onMouseLeave={handleMouseLeave}
       className="relative w-full h-full overflow-hidden flex items-center justify-center bg-black"
     >
-      {videoSrc ? (
+      {!isMobile && videoSrc ? (
         <video
           ref={videoRef}
           src={videoSrc}
           muted
           loop
           playsInline
+          preload="none"
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 pointer-events-none z-0"
         />
       ) : null}
 
       {coverImage ? (
         <img
-          src={coverImage}
+          src={getOptimizedImageUrl(coverImage, { width: 600 })}
           alt={alt || 'Collection Cover'}
+          loading="lazy"
+          decoding="async"
           className={`w-full h-full object-cover transition-all duration-500 group-hover/card:scale-105 hover:scale-105 relative z-10 ${
-            isCardHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+            !isMobile && isCardHovered && videoSrc ? 'opacity-0' : 'opacity-100'
           }`}
         />
       ) : (
         <div
           className={`w-full h-full flex items-center justify-center p-4 bg-stripes-dark transition-all duration-500 group-hover/card:scale-105 hover:scale-105 relative z-10 ${
-            isCardHovered && videoSrc ? 'opacity-0' : 'opacity-100'
+            !isMobile && isCardHovered && videoSrc ? 'opacity-0' : 'opacity-100'
           }`}
         >
           <div className="text-neutral-400 font-space text-xs">NO IMAGE</div>
@@ -214,7 +219,7 @@ export default function CollectionsShowcase() {
                       coverImage={col.coverImage}
                       hoverVideo={col.hoverVideo}
                       alt={col.name}
-
+                      isMobile={isMobile}
                     />
                   </div>
 

@@ -10,6 +10,7 @@ import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
 import SEO from '../components/common/SEO';
 import { getBreadcrumbSchema } from '../utils/seoSchemas';
+import { getOptimizedImageUrl } from '../utils/imageUtils';
 import { SkeletonCollectionCard } from '../components/common/Skeleton';
 import { getCollections, addCollectionAPI, updateCollectionAPI, deleteCollectionAPI } from '../services/api';
 
@@ -61,15 +62,15 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
       onMouseLeave={handleMouseLeave}
       className="relative w-full h-full overflow-hidden flex items-center justify-center bg-black"
     >
-      {/* Video Element Underneath (Only if video is uploaded) */}
-      {videoSrc ? (
+      {/* Video Element Underneath (Only if video is uploaded and not on mobile) */}
+      {!isMobile && videoSrc ? (
         <video
           ref={videoRef}
           src={videoSrc}
           muted
           loop
           playsInline
-          autoPlay={isMobile}
+          preload="none"
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none z-0"
         />
       ) : null}
@@ -77,16 +78,18 @@ function HoverMedia({ coverImage, hoverVideo, alt, fallbackSvg }) {
       {/* Static Cover Image / SVG Overlay */}
       {coverImage ? (
         <img
-          src={coverImage}
+          src={getOptimizedImageUrl(coverImage, { width: 600 })}
           alt={alt || 'Collection Cover'}
+          loading="lazy"
+          decoding="async"
           className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${
-            (isMobile || isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
+            !isMobile && isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
           }`}
         />
       ) : (
         <div
           className={`w-full h-full flex items-center justify-center p-6 bg-stripes-light transition-all duration-500 group-hover:scale-105 hover:scale-105 relative z-10 ${
-            (isMobile || isHovered) && videoSrc ? 'opacity-0' : 'opacity-100'
+            !isMobile && isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
           }`}
         >
           <div className="w-full h-full text-xs font-space text-neutral-400 flex items-center justify-center">NO IMAGE</div>
@@ -466,7 +469,7 @@ export default function CollectionsPage() {
                       key={col._id || idx}
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: '-50px' }}
+                      viewport={{ once: true, margin: '0px' }}
                       transition={{ type: 'spring', bounce: 0, duration: 0.5, delay: idx * 0.06 }}
                       className="border-4 border-black bg-white flex flex-col justify-between group hover:shadow-solid-lg transition-all duration-200 relative overflow-hidden"
                     >

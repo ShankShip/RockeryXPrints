@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus } from 'lucide-react';
 import { addToCart } from '../../store/cartSlice';
+import { getOptimizedImageUrl } from '../../utils/imageUtils';
 
 const spring = { type: 'spring', stiffness: 300, damping: 25 };
 
@@ -25,7 +26,7 @@ export default function ProductCard({ product, idx }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
+      viewport={{ once: true, margin: '0px' }}
       transition={{ ...spring, delay: (idx % 4) * 0.06 }}
       whileHover={{ x: -4, y: -4, boxShadow: '6px 6px 0px 0px #000000' }}
       className="bg-black border-2 border-black h-full flex flex-col"
@@ -38,8 +39,10 @@ export default function ProductCard({ product, idx }) {
             {/* Cloudinary Image or Fallback SVG */}
             {product.images && product.images[0] ? (
               <img
-                src={product.images[0]}
+                src={getOptimizedImageUrl(product.images[0], { width: 600 })}
                 alt={product.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             ) : (

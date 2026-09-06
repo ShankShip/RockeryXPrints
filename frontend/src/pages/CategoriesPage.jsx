@@ -10,6 +10,7 @@ import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
 import SEO from '../components/common/SEO';
 import { getBreadcrumbSchema } from '../utils/seoSchemas';
+import { getOptimizedImageUrl } from '../utils/imageUtils';
 import { SkeletonCategoryCard } from '../components/common/Skeleton';
 import { getCategories, addCategoryAPI, updateCategoryAPI } from '../services/api';
 
@@ -335,7 +336,7 @@ export default function CategoriesPage() {
               key={cat._id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
+              viewport={{ once: true, margin: '0px' }}
               transition={{ ...spring, delay: (idx % 3) * 0.07 }}
               whileHover={{ x: -5, y: -5, boxShadow: '7px 7px 0px 0px #000000' }}
               className="bg-black border-2 border-black relative overflow-hidden"
@@ -366,8 +367,10 @@ export default function CategoriesPage() {
 
                     {cat.coverImage ? (
                       <img
-                        src={cat.coverImage}
+                        src={getOptimizedImageUrl(cat.coverImage, { width: 600 })}
                         alt={cat.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     ) : (

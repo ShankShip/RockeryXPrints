@@ -31,6 +31,7 @@ import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
 import SEO from '../components/common/SEO';
 import { getProductSchema, getBreadcrumbSchema } from '../utils/seoSchemas';
+import { getOptimizedImageUrl } from '../utils/imageUtils';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 
@@ -528,8 +529,9 @@ export default function ProductDetailPage() {
               >
                 {product.images && product.images[activeThumb] ? (
                   <img
-                    src={product.images[activeThumb]}
+                    src={getOptimizedImageUrl(product.images[activeThumb], { width: 1200 })}
                     alt={product.name}
+                    decoding="async"
                     className="max-h-[60vh] w-auto object-contain transition-transform duration-500 group-hover:scale-[1.03]"
                   />
                 ) : (
@@ -564,7 +566,13 @@ export default function ProductDetailPage() {
                     className={`aspect-square p-2 bg-neutral-50 flex items-center justify-center transition-all cursor-pointer relative overflow-hidden ${activeThumb === i ? 'bg-white ring-4 ring-inset ring-black opacity-100' : 'opacity-50 hover:opacity-100'
                       }`}
                   >
-                    <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                    <img
+                      src={getOptimizedImageUrl(img, { width: 160, height: 160, crop: 'fill' })}
+                      alt={`thumb-${i}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))
               ) : (
@@ -733,7 +741,13 @@ export default function ProductDetailPage() {
                         {editImageList.map((item, idx) => (
                           <div key={item.id || idx} className="relative border-2 border-black bg-white p-1.5 flex flex-col justify-between shadow-solid-sm">
                             <div className="relative aspect-3/4 w-full bg-neutral-100 border border-black overflow-hidden mb-1">
-                              <img src={item.url} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />
+                              <img
+                                src={getOptimizedImageUrl(item.url, { width: 200 })}
+                                alt={`Product ${idx + 1}`}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-full h-full object-cover"
+                              />
                               <span className="absolute top-1 left-1 text-[8px] font-black uppercase px-1.5 py-0.5 border border-black bg-black text-white">
                                 #{idx + 1}
                               </span>
@@ -1009,7 +1023,7 @@ export default function ProductDetailPage() {
                     key={relProd._id || idx}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-40px' }}
+                    viewport={{ once: true, margin: '0px' }}
                     transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: idx * 0.08 }}
                     onClick={() => navigate(`/products/${relProd.slug}`)}
                     className="border-2 border-black bg-white p-4 flex flex-col justify-between group hover:shadow-solid cursor-pointer transition-all duration-150 shrink-0 w-[280px] snap-start"
@@ -1018,8 +1032,10 @@ export default function ProductDetailPage() {
                       <div className="w-full aspect-3/4 bg-neutral-100 border-2 border-black relative mb-4 overflow-hidden flex items-center justify-center">
                         {relProd.images && relProd.images[0] ? (
                           <img
-                            src={relProd.images[0]}
+                            src={getOptimizedImageUrl(relProd.images[0], { width: 500 })}
                             alt={relProd.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -1223,8 +1239,10 @@ export default function ProductDetailPage() {
                             <div className="flex items-center gap-3">
                               {userAvatar ? (
                                 <img
-                                  src={userAvatar}
+                                  src={getOptimizedImageUrl(userAvatar, { width: 100, height: 100, crop: 'fill' })}
                                   alt={userName}
+                                  loading="lazy"
+                                  decoding="async"
                                   className="w-10 h-10 border-2 border-black object-cover shrink-0"
                                 />
                               ) : (
@@ -1302,8 +1320,9 @@ export default function ProductDetailPage() {
             >
               {product.images && product.images[activeThumb] ? (
                 <img
-                  src={product.images[activeThumb]}
+                  src={getOptimizedImageUrl(product.images[activeThumb])}
                   alt={product.name}
+                  decoding="async"
                   className="max-w-full max-h-[80vh] object-contain mx-auto"
                 />
               ) : (

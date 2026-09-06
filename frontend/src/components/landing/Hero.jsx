@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { ArrowRight, ShoppingBag, Zap } from 'lucide-react';
+import { getOptimizedImageUrl } from '../../utils/imageUtils';
 
 
 const SPRING_CONFIG = { stiffness: 220, damping: 28, mass: 0.8 };
@@ -83,8 +84,9 @@ function PerspectiveCard({ prod, index, isStackHovered, isHovered, screenSize, o
         <div className="w-full h-[85%] border-2 border-black relative flex items-center justify-center overflow-hidden bg-neutral-100">
           {prod.images && prod.images[0] ? (
             <img
-              src={prod.images[0]}
+              src={getOptimizedImageUrl(prod.images[0], { width: 800 })}
               alt={prod.name}
+              decoding="async"
               className="w-full h-full object-cover"
               draggable={false}
             />

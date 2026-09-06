@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { Plus, Check } from 'lucide-react';
 import { addToCart } from '../../store/cartSlice';
+import { getOptimizedImageUrl } from '../../utils/imageUtils';
 
 
 const SPRING = { stiffness: 280, damping: 26, mass: 0.8 };
@@ -72,18 +73,20 @@ function ProductHoverMedia({ coverImage, hoverVideo, alt, fallbackSvg, isMobile 
           muted
           loop
           playsInline
+          preload="none"
           className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
         />
       ) : null}
 
       {coverImage ? (
         <img
-          src={coverImage}
+          src={getOptimizedImageUrl(coverImage, { width: 700 })}
           alt={alt || 'Product Image'}
           className={`w-full h-full object-cover transition-all duration-500 relative z-10 ${
             !isMobile && isHovered && videoSrc ? 'opacity-0' : 'opacity-100'
           }`}
           loading="lazy"
+          decoding="async"
         />
       ) : (
         <div
@@ -243,7 +246,7 @@ export default function FeaturedProducts({ products, loading = false }) {
       <motion.div
         initial={{ y: isMobile ? 0 : 30, opacity: isMobile ? 1 : 0 }}
         whileInView={{ y: 0, opacity: 1 }}
-        viewport={{ once: true, margin: '-50px' }}
+        viewport={{ once: true, margin: '0px' }}
         transition={isMobile ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.5 }}
         className="border-b-4 border-black px-6 py-8 md:px-12 bg-white flex flex-col md:flex-row md:items-end justify-between gap-4"
       >

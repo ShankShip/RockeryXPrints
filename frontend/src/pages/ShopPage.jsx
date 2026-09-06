@@ -13,6 +13,7 @@ import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import SEO from '../components/common/SEO';
 import { getBreadcrumbSchema } from '../utils/seoSchemas';
+import { getOptimizedImageUrl } from '../utils/imageUtils';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 const ITEMS_PER_PAGE = 20;
@@ -362,7 +363,7 @@ export default function ShopPage() {
                     key={product._id}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-40px' }}
+                    viewport={{ once: true, margin: '0px' }}
                     transition={{ ...spring, delay: (idx % 4) * 0.06 }}
                     whileHover={{ x: -4, y: -4, boxShadow: '6px 6px 0px 0px #000000' }}
                     className="bg-black border-2 border-black h-full flex flex-col"
@@ -376,8 +377,10 @@ export default function ShopPage() {
                           {/* Cloudinary Image or Fallback SVG */}
                           {product.images && product.images[0] ? (
                             <img
-                              src={product.images[0]}
+                              src={getOptimizedImageUrl(product.images[0], { width: 600 })}
                               alt={product.name}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover"
                             />
                           ) : (

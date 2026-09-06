@@ -4,10 +4,23 @@ import { Link } from 'react-router';
 import { ShieldCheck, FileText, Lock, Globe, Scale } from 'lucide-react';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
+import SEO from '../components/common/SEO';
+import { getBreadcrumbSchema } from '../utils/seoSchemas';
 
 export default function TermsPage() {
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Terms & Conditions', path: '/terms-and-conditions' }
+  ];
+
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white flex flex-col justify-between overflow-x-hidden">
+      <SEO
+        title="Terms & Conditions"
+        description="Terms and conditions governing orders, custom print manufacturing, intellectual property, and platform usage at Rockery Prints."
+        canonical="/terms-and-conditions"
+        jsonLd={getBreadcrumbSchema(breadcrumbs)}
+      />
       <div>
         <Navbar />
 

@@ -1,0 +1,24 @@
+# robots.txt for Rockery Prints (https://rockeryprints.in)
+User-agent: *
+
+# Allow public browsing & indexable routes
+Allow: /
+Allow: /shop
+Allow: /categories
+Allow: /category/
+Allow: /collections
+Allow: /products/
+Allow: /return-policy
+Allow: /returns
+Allow: /terms-and-conditions
+Allow: /terms
+
+# Disallow private user flows & checkout
+Disallow: /cart
+Disallow: /dashboard
+Disallow: /orders/
+Disallow: /auth
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://rockeryprints.in/sitemap.xml

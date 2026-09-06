@@ -9,6 +9,7 @@ import { createOrder, initiateOrderAPI, verifyOrderAPI } from '../services/api';
 
 import Navbar from '../components/landing/Navbar';
 import EmailVerificationModal from '../components/cart/EmailVerificationModal';
+import SEO from '../components/common/SEO';
 import { INDIAN_STATES } from '../utils/constants';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
@@ -290,6 +291,7 @@ export default function CartPage() {
   if (orderPlaced) {
     return (
       <div className="min-h-dvh bg-black text-white flex flex-col items-center justify-center px-5 py-20 selection:bg-white selection:text-black">
+        <SEO title="Order Confirmed" noindex={true} />
         <motion.div
           initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -322,6 +324,7 @@ export default function CartPage() {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-dvh bg-white text-black selection:bg-black selection:text-white flex flex-col">
+        <SEO title="Your Cart" noindex={true} />
         <Navbar />
         <div className="pt-20 flex-1 flex flex-col items-center justify-center p-6 text-center">
           <ShoppingBag size={48} className="mb-4 text-neutral-300" />
@@ -344,6 +347,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-dvh bg-white text-black selection:bg-black selection:text-white flex flex-col">
+      <SEO title="Your Cart & Checkout" noindex={true} />
       <Navbar />
       <div className="pt-20 flex-1 flex flex-col">
 

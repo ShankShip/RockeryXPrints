@@ -4,10 +4,23 @@ import { Link } from 'react-router';
 import { ShieldCheck, Clock, AlertTriangle, CheckCircle, Mail, ArrowRight } from 'lucide-react';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
+import SEO from '../components/common/SEO';
+import { getBreadcrumbSchema } from '../utils/seoSchemas';
 
 export default function ReturnPolicyPage() {
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Return Policy', path: '/return-policy' }
+  ];
+
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white flex flex-col justify-between overflow-x-hidden">
+      <SEO
+        title="Return & Replacement Policy"
+        description="Learn about Rockery Prints' customer satisfaction guarantee, replacement policies for shipping damage, and defect resolutions."
+        canonical="/return-policy"
+        jsonLd={getBreadcrumbSchema(breadcrumbs)}
+      />
       <div>
         <Navbar />
 

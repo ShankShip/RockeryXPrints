@@ -11,6 +11,8 @@ import { getProducts, getCategories } from '../services/api';
 import { applyDeepSearch } from '../utils/searchUtils';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
+import SEO from '../components/common/SEO';
+import { getBreadcrumbSchema } from '../utils/seoSchemas';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 const ITEMS_PER_PAGE = 20;
@@ -227,8 +229,23 @@ export default function ShopPage() {
     setSearchParams(searchParams);
   };
 
+  const shopBreadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Shop', path: '/shop' }
+  ];
+
+  const pageTitle = activeTag !== 'all'
+    ? `${activeTag.toUpperCase()} Prints`
+    : 'Shop All Brutalist Art Prints & Apparel';
+
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white overflow-x-hidden">
+      <SEO
+        title={pageTitle}
+        description="Browse our complete catalog of brutalist art prints, high-grade posters, archival canvases, and pop-culture tributes. Filter by category, price, and popularity."
+        canonical="/shop"
+        jsonLd={getBreadcrumbSchema(shopBreadcrumbs)}
+      />
       <Navbar />
 
       <div className="pt-20" ref={gridTopRef}>

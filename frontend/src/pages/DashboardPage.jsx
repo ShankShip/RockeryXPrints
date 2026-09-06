@@ -8,6 +8,7 @@ import { logoutThunk, setUser } from '../store/authSlice';
 import { updateDetails, changePassword, getOrders, getAllOrdersAPI, updateAvatarAPI } from '../services/api';
 import Navbar from '../components/landing/Navbar';
 import Popup from '../components/landing/Popup';
+import SEO from '../components/common/SEO';
 import { SkeletonRow } from '../components/common/Skeleton';
 import EmailVerificationModal from '../components/cart/EmailVerificationModal';
 import ChangePasswordModal from '../components/profile/ChangePasswordModal';
@@ -1017,6 +1018,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white">
+      <SEO title="User Dashboard" noindex={true} />
       <Navbar />
 
       <div className="pt-20 max-w-7xl mx-auto">

@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { ArrowLeft, Package, Truck, Compass, CheckCircle, AlertOctagon, XOctagon, MessageSquare, AlertTriangle, X } from 'lucide-react';
 import { getOrderByIdAPI, updateOrderStatusAPI } from '../services/api';
 import Navbar from '../components/landing/Navbar';
+import SEO from '../components/common/SEO';
 import { SkeletonDetail } from '../components/common/Skeleton';
 import { renderTextWithLinks } from '../utils/formatters';
 
@@ -139,6 +140,7 @@ export default function OrderDetailPage() {
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white flex flex-col">
+      <SEO title="Order Status" noindex={true} />
       <Navbar />
 
       <div className="pt-24 max-w-5xl mx-auto w-full px-4 md:px-12 pb-20 flex-1">

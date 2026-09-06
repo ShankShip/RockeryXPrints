@@ -20,7 +20,8 @@ function shuffle(array) {
   return arr;
 }
 
-import { Helmet } from 'react-helmet-async';
+import SEO from '../components/common/SEO';
+import { getOrganizationSchema, getWebSiteSchema } from '../utils/seoSchemas';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -43,15 +44,16 @@ export default function Home() {
   const heroProducts = products.slice(0, 3);
   const featuredProducts = products.slice(3, 7);
 
+  const homeSchemas = [getOrganizationSchema(), getWebSiteSchema()];
+
   return (
     <div id="home" className="min-h-screen bg-white text-black font-space selection:bg-black selection:text-white overflow-x-hidden antialiased">
-      <Helmet>
-        <title>RockeryXPrints | Premium Art Prints & Collections</title>
-        <meta name="description" content="Discover premium, brutalist-inspired art prints. High-quality posters, canvases, and limited edition collections." />
-        <meta property="og:title" content="RockeryXPrints | Premium Art Prints" />
-        <meta property="og:description" content="Discover premium, brutalist-inspired art prints. High-quality posters and limited edition collections." />
-        <meta property="og:type" content="website" />
-      </Helmet>
+      <SEO
+        title="Premium Brutalist Art Prints, Posters & Fandom Merch"
+        description="Discover premium brutalist-inspired art prints, high-grade posters, archival frames, and exclusive fandom merchandise crafted for modern aesthetic spaces."
+        canonical="/"
+        jsonLd={homeSchemas}
+      />
       <ServerWarmupBanner />
       <Navbar />
       <main className="pt-20">

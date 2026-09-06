@@ -3,12 +3,14 @@ import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import Logo3 from '../assets/Logo3.png';
+import SEO from '../components/common/SEO';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.4 };
 
 export default function NotFoundPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6 relative overflow-hidden selection:bg-white selection:text-black">
+      <SEO title="404 - Page Not Found" noindex={true} />
 
       {/* Background grid pattern */}
       <div

@@ -8,6 +8,8 @@ import { ArrowRight, Layers, Plus, Upload, X, Edit2 } from 'lucide-react';
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
+import SEO from '../components/common/SEO';
+import { getBreadcrumbSchema } from '../utils/seoSchemas';
 import { SkeletonCategoryCard } from '../components/common/Skeleton';
 import { getCategories, addCategoryAPI, updateCategoryAPI } from '../services/api';
 
@@ -121,8 +123,19 @@ export default function CategoriesPage() {
 
   const totalProducts = categories.reduce((s, c) => s + (c.productCount || 0), 0);
 
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Categories', path: '/categories' }
+  ];
+
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white overflow-x-hidden">
+      <SEO
+        title="Fandom Categories & Art Archives"
+        description="Explore curated brutalist art categories and fandom archives at Rockery Prints. Discover posters, frames, and merchandise organized by anime, gaming, and cinematic universes."
+        canonical="/categories"
+        jsonLd={getBreadcrumbSchema(breadcrumbs)}
+      />
       <Navbar />
 
       <div className="pt-20">

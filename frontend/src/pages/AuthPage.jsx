@@ -8,6 +8,7 @@ import { setUser } from '../store/authSlice';
 import { setCart } from '../store/cartSlice';
 import { loginUser, registerUser, getUserCart } from '../services/api';
 import Logo1 from '../assets/Logo1.png';
+import SEO from '../components/common/SEO';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 
@@ -100,6 +101,7 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-dvh bg-white flex flex-col items-center justify-center px-4 py-10 selection:bg-black selection:text-white">
+      <SEO title={mode === 'login' ? 'Sign In' : 'Create Account'} noindex={true} />
       {/* Hidden iframe for native browser form password detection */}
       <iframe name="hidden_auth_iframe" id="hidden_auth_iframe" style={{ display: 'none' }} title="hidden_auth_iframe" />
 

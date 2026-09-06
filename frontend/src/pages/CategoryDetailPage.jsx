@@ -9,6 +9,8 @@ import { getCategories, getProducts, addProductAPI, deleteCategoryAPI } from '..
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
+import SEO from '../components/common/SEO';
+import { getBreadcrumbSchema } from '../utils/seoSchemas';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.35 };
 const ITEMS_PER_PAGE = 20;
@@ -424,8 +426,23 @@ export default function CategoryDetailPage() {
 
   const isCategoryEmpty = products.length === 0 || category?.productCount === 0;
 
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Categories', path: '/categories' },
+    { name: category?.name || 'Category', path: `/category/${categorySlug}` }
+  ];
+
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white overflow-x-hidden">
+      <SEO
+        title={category?.name ? `${category.name} Art Prints & Merch` : 'Category Art Prints'}
+        description={category?.name
+          ? `Explore exclusive ${category.name} brutalist art prints, high-grade posters, and archival wall decor at Rockery Prints.`
+          : 'Explore exclusive brutalist art prints and posters at Rockery Prints.'}
+        canonical={`/category/${categorySlug}`}
+        ogImage={category?.coverImage}
+        jsonLd={getBreadcrumbSchema(breadcrumbs)}
+      />
       <Navbar />
 
       <div className="pt-20" ref={gridTopRef}>

@@ -29,6 +29,8 @@ import { getProductBySlug, updateProductAPI, deleteProductAPI, getProducts, addO
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
+import SEO from '../components/common/SEO';
+import { getProductSchema, getBreadcrumbSchema } from '../utils/seoSchemas';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.3 };
 
@@ -435,6 +437,7 @@ export default function ProductDetailPage() {
   if (errorMsg && !editOpen && !product) {
     return (
       <div className="min-h-screen bg-white text-black font-space flex flex-col justify-between">
+        <SEO noindex={true} title="Product Not Found" />
         <div>
           <Navbar />
           <div className="pt-36 pb-20 px-6 text-center">
@@ -459,8 +462,31 @@ export default function ProductDetailPage() {
   const discountPercent = product.mrp ? Math.round((saving / product.mrp) * 100) : 0;
   const totalImages = product.images && product.images.length > 0 ? product.images.length : 1;
 
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    {
+      name: product.category?.name || 'Categories',
+      path: product.category?.slug ? `/category/${product.category.slug}` : '/categories'
+    },
+    { name: product.name, path: `/products/${product.slug || slug}` }
+  ];
+
+  const productSchemas = [
+    getProductSchema(product),
+    getBreadcrumbSchema(breadcrumbs)
+  ];
+
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white flex flex-col justify-between antialiased">
+      <SEO
+        title={product.name}
+        description={product.description || `Buy ${product.name} at Rockery Prints. Premium brutalist art print with archival matte finish.`}
+        canonical={`/products/${product.slug || slug}`}
+        ogImage={product.images?.[0]}
+        ogType="product"
+        keywords={product.searchTags}
+        jsonLd={productSchemas}
+      />
       <div>
         <Navbar />
 

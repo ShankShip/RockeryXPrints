@@ -8,6 +8,8 @@ import { ArrowRight, Layers, Plus, Upload, X, Trash2, Tag, Edit2, Film } from 'l
 import Navbar from '../components/landing/Navbar';
 import Footer from '../components/landing/Footer';
 import Popup from '../components/landing/Popup';
+import SEO from '../components/common/SEO';
+import { getBreadcrumbSchema } from '../utils/seoSchemas';
 import { SkeletonCollectionCard } from '../components/common/Skeleton';
 import { getCollections, addCollectionAPI, updateCollectionAPI, deleteCollectionAPI } from '../services/api';
 
@@ -278,8 +280,19 @@ export default function CollectionsPage() {
       .finally(() => setDeletingId(null));
   };
 
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Collections', path: '/collections' }
+  ];
+
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white flex flex-col justify-between antialiased">
+      <SEO
+        title="Curated Art Collections & Series"
+        description="Discover themed brutalist art collections, limited edition drops, and curated pop-culture poster series at Rockery Prints."
+        canonical="/collections"
+        jsonLd={getBreadcrumbSchema(breadcrumbs)}
+      />
       <div>
         <Navbar />
 
